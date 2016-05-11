@@ -1,0 +1,164 @@
+//RGB LED Library
+#include <Adafruit_NeoPixel.h>
+
+//Analog Input Pins
+int left_channel = 0;
+int right_channel = 1;
+
+//dynamic analogue max
+int maxinput = 1;
+int maxresetlagcount = 0;
+int flashdifference = 40;
+
+//Set Strip Constants
+const int length = 300;
+const byte half = length/2;
+
+//Library Setup
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
+
+//Set up arrays for cycling through all the pixels.  I'm assuming you have an even number of lights.
+byte left_array[half];
+byte right_array[half];
+
+//unsigned int left_array[half];
+//unsigned int right_array[half];
+
+void setup()
+{
+  //Initialize Serial Connection (for debugging)
+  Serial.begin(9600);
+  
+  //Fill pixel arrays with zeros
+  for(int i=0; i<half;i++)
+  {
+    left_array[i] = 0;
+    right_array[i] = 0;
+  }
+  
+  //Initialize Strip
+  strip.begin();
+  strip.show(); 
+}
+
+void loop()
+{
+  //Read audio
+  int leftRead = analogRead(left_channel);
+  int rightRead = analogRead(left_channel);
+  
+  //Print out some Debug Info if we raise the max bounds
+  if(leftRead > maxinput){
+    maxinput = leftRead;
+
+    Serial.print("L ");
+    Serial.println(maxinput);
+    
+  }else if(rightRead > maxinput){
+    maxinput = rightRead;
+
+    Serial.print("R ");
+    Serial.println(maxinput);
+  }
+  else{
+    if(leftRead == 0 && rightRead == 0){//if audio is flat for 10 loops, drop the max input
+      maxresetlagcount++;
+      if(maxresetlagcount == 20 && maxinput != 10){
+        maxresetlagcount = 0;
+        maxinput = 10;
+        Serial.println("V");//V for down arrow, its been reset
+      }
+    } else{
+      maxresetlagcount = 0;
+    }
+  }
+  if(maxinput < 1){
+    maxinput = 1;
+  }
+
+  if(leftRead > maxinput/10*8){
+    flashLeft(Wheel(constrain(map(leftRead, maxinput/10*8, maxinput, 0, 255), 0, 255)));
+    delay(10);
+  }
+
+  if(rightRead > maxinput/10*8){
+    flashRight(Wheel(constrain(map(rightRead, maxinput/10*8, maxinput, 0, 255), 0, 255)));
+    delay(10);
+  }
+  
+  //Set the hue (0-255) and 24-bit color depending on left channel value
+  int hue_left = constrain(map(leftRead, 0, maxinput, 0, 255), 0, 255);
+  uint32_t color_left = Wheel(hue_left);
+  
+  //Set the hue (0-255) and 24-bit color depending on right channel value
+  int hue_right = constrain(map(rightRead, 0, maxinput, 0, 255), 0, 255);
+  uint32_t color_right = Wheel(hue_right);
+  
+  //Shift the current values.
+  for (int i = 0; i<half-1; i++)
+  {
+    left_array[i] = left_array[i+1];
+    right_array[i] = right_array[i+1];
+  }
+  
+  //Fill in the new value at the end of each array
+  left_array[half-1] = hue_left;
+  right_array[half-1] = color_right;
+  
+  //Go through each Pixel on the strip and set its color
+  for (int i=0; i<half; i++)
+  {
+    //set pixel color
+    strip.setPixelColor(i, Wheel(left_array[i]));
+    strip.setPixelColor(length-i-1, Wheel(right_array[i]));
+  }
+
+  //display new frame on lights
+  strip.show();
+  
+  //delay ms
+  delay(50);
+}
+
+void flashLeft(uint32_t c) {
+  for(uint16_t i=0; i<half; i++) {
+      strip.setPixelColor(i, c);
+  }
+  strip.show();
+}
+
+void flashRight(uint32_t c) {
+  for(uint16_t i=0; i<half; i++) {
+      strip.setPixelColor(length-i-1, c);
+  }
+  strip.show();
+}
+
+// Create a 24 bit color value from R,G,B
+uint32_t Color(byte r, byte g, byte b)
+{
+  uint32_t c;
+  c = r;
+  c <<= 8;
+  c |= g;
+  c <<= 8;
+  c |= b;
+  return c;
+}
+
+//Input a value 0 to 255 to get a color value.
+//The colours are a transition r - g -b - back to r
+uint32_t Wheel(byte WheelPos)
+{
+  if (WheelPos == 0){
+    return Color(0, 0, 0);
+  } else if (WheelPos < 85) {
+   return Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if (WheelPos < 170) {
+   WheelPos -= 85;
+   return Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+   WheelPos -= 170; 
+   return Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
