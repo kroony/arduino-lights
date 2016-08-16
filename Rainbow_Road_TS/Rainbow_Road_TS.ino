@@ -36,7 +36,7 @@ void setup() {
   
   //Initialize Strip
   strip.begin();
-  strip.setBrightness(25);
+  strip.setBrightness(255);
   strip.show(); 
 }
 
