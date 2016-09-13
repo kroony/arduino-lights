@@ -6,6 +6,7 @@ int left_channel = 0;
 
 //dynamic analogue max
 int leftvolmax = 1;
+int updateDelay = 10;
 
 //Set Strip Constants
 const int length = 300;
@@ -18,7 +19,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(length, 6, NEO_GRB + NEO_KHZ800);
 void setup()
 {
   //Initialize Serial Connection (for debugging)
-  Serial.begin(9600);
+  Serial.begin(4800);
   
   //Initialize Strip
   strip.begin();
@@ -28,7 +29,15 @@ void setup()
 void loop()
 {
   //Read audio
-  int leftvolume = analogRead(left_channel);
+  int leftvolume = 0;
+  for(int i = 0; i < updateDelay; i++)
+  {
+    leftvolume += analogRead(left_channel);
+    delay(1);
+    Serial.print("read " + i);
+  }
+  leftvolume /= updateDelay;
+  Serial.print("end read");
   
   leftvolume = map(leftvolume, 0, 600, 0, length);
   Serial.println(leftvolume);
@@ -37,7 +46,7 @@ void loop()
   if(leftvolume > leftvolmax){
     leftvolmax = leftvolume;
 
-    Serial.print("v^ ");
+    Serial.print("v ");
     Serial.println(leftvolmax);
     
   }else {
@@ -109,7 +118,7 @@ void loop()
   strip.show();
   
   //delay ms
-  delay(10);
+  //delay(5);
 }
 
 int GetNextColor()
@@ -148,4 +157,6 @@ uint32_t Wheel(byte WheelPos)
    return Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
+
+
 
