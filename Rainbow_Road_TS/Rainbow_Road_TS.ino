@@ -3,7 +3,8 @@
 
 const byte pirPin = 3;
 const byte LightDataPin = 6;
-const int length = 300;
+const int length = 300; //length of led strip
+const byte delay = 10;//delay between 0 - 255
 
 bool bgColor = 0;
 byte travelingLight1Colour = 0;
@@ -15,17 +16,18 @@ bool state = true;
 byte whiteCount = 0;
 byte whiteCountLeft = 46;
 
+byte spacing = 22;
 byte rightColorCount1 = 0;
-byte rightColorCount2 = 22;
-byte rightColorCount3 = 44;
-byte rightColorCount4 = 66;
-byte rightColorCount5 = 88;
+byte rightColorCount2 = rightColorCount1 + spacing;
+byte rightColorCount3 = rightColorCount2 + spacing;
+byte rightColorCount4 = rightColorCount3 + spacing;
+byte rightColorCount5 = rightColorCount4 + spacing;
 
 int leftColorCount1 = 200;
-int leftColorCount2 = 222;
-int leftColorCount3 = 244;
-int leftColorCount4 = 266;
-int leftColorCount5 = 288;
+int leftColorCount2 = leftColorCount1 + spacing;
+int leftColorCount3 = leftColorCount2 + spacing;
+int leftColorCount4 = leftColorCount3 + spacing;
+int leftColorCount5 = leftColorCount4 + spacing;
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(length, LightDataPin, NEO_GRB + NEO_KHZ800);
 
@@ -41,9 +43,11 @@ void setup() {
 }
 
 void loop() {
+  //check to see we have motion or not
   current = digitalRead(pirPin);
   Serial.println(current);
-  if(current == 1 && last == 0)
+  
+  if(current == 1 && last == 0) //if this is new motion, change the state (colours)
   {
     if(state)
     {
@@ -56,7 +60,8 @@ void loop() {
       state = true;
     }
   }
-
+  
+  //save current state as last to check against next pass
   last = current;
   
   showTSMiddle();
@@ -106,7 +111,8 @@ void loop() {
   if(leftColorCount4 < 200)  {leftColorCount4 = 310;}
   leftColorCount5--;
   if(leftColorCount5 < 200)  {leftColorCount5 = 310;}
-
+  
+  //push to lights
   strip.show();
   delay(10);
 }
@@ -122,13 +128,20 @@ void showLeftSides(int counter){
   {
     if(i+counter-5 < 300 && i+counter-5 >= 200)
     {
-      if(bgColor == 1)
+      if(current)//if currently detecting motion, rainbow the sides
       {
-        strip.setPixelColor(i+counter-5, strip.Color(255, 0, 0));
+        strip.setPixelColor(i+counter-5, Wheel(GetNextColor()));
       }
       else
       {
-        strip.setPixelColor(i+counter-5, strip.Color(0, 255, 0));
+        if(bgColor == 1)
+        {
+          strip.setPixelColor(i+counter-5, strip.Color(255, 0, 0));
+        }
+        else
+        {
+          strip.setPixelColor(i+counter-5, strip.Color(0, 255, 0));
+        }
       }
     }
   }
@@ -139,13 +152,20 @@ void showRightSides(byte counter){
   {
     if(i+counter-5 < 100 && i+counter-5 >= 0)
     {
-      if(bgColor == 1)
+      if(current)//if currently detecting motion, rainbow the sides
       {
-        strip.setPixelColor(i+counter-5, strip.Color(255, 0, 0));
+        strip.setPixelColor(i+counter-5, Wheel(GetNextColor()));
       }
       else
       {
-        strip.setPixelColor(i+counter-5, strip.Color(0, 255, 0));
+        if(bgColor == 1)
+        {
+          strip.setPixelColor(i+counter-5, strip.Color(255, 0, 0));
+        }
+        else
+        {
+          strip.setPixelColor(i+counter-5, strip.Color(0, 255, 0));
+        }
       }
     }
   }
@@ -196,11 +216,6 @@ void showTSMiddle(){
       whiteCountLeft = 46;
     }
   }
-
-  
-
-
-
   for(byte i=190; i<200; i++)//rainbow
   {
     strip.setPixelColor(i, Wheel(travelingLight1Colour));
@@ -209,8 +224,6 @@ void showTSMiddle(){
   {
     strip.setPixelColor(i, Wheel(travelingLight1Colour));
   }
-
-  
 }
 
 int GetNextColor(int color)
