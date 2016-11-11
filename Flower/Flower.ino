@@ -50,7 +50,7 @@ void loop()
   spinnerBrightness++;
 
   //show static rainbow LED at 0
-  strip.setPixelColor(0, WheelBrightness(GetNextColor(),50));
+  strip.setPixelColor(0, WheelBrightness(GetNextColor(),brightness));
 
   //push
   strip.show();
