@@ -40,12 +40,30 @@ void setup() {
   strip.begin();
   strip.setBrightness(LightBrightness);
   strip.show(); 
+
+  //run a light strip test to check the strand and make sure we have enough voltage
+  colorWipe(strip.Color(255, 0, 0), 40); // Red
+  colorWipe(strip.Color(0, 0, 0), 25); // Off
+  colorWipe(strip.Color(0, 255, 0), 40); // Green
+  colorWipe(strip.Color(0, 0, 0), 25); // Off
+  colorWipe(strip.Color(0, 0, 255), 40); // Blue
+  colorWipe(strip.Color(0, 0, 0), 25); // Off
+  
+}
+
+// Fill the dots one after the other with a color
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
+  }
 }
 
 void loop() {
   //check to see we have motion or not
   current = digitalRead(pirPin);
-  Serial.println(current);
+  Serial.println(current); //debug
   
   if(current == 1 && last == 0) //if this is new motion, change the state (colours)
   {
