@@ -19,8 +19,8 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(length, 6, NEO_GRB + NEO_KHZ800);
 void setup()
 {
   //Initialize Serial Connection (for debugging)
-  Serial.begin(4800);
-  
+  Serial.begin(9600);
+  delay(250);
   //Initialize Strip
   strip.begin();
   strip.show(); 
@@ -39,7 +39,7 @@ void loop()
   leftvolume /= updateDelay;
   Serial.print("end read");
   
-  leftvolume = map(leftvolume, 0, 600, 0, length);
+  leftvolume = map(leftvolume, 0, 100, 0, length);
   Serial.println(leftvolume);
   
   //Print out some Debug Info if we raise the max bounds
@@ -56,22 +56,6 @@ void loop()
       leftvolmax = 0;
     }
   }
-
-  //Print out some Debug Info if we raise the max bounds
-  /*
-  if(rightvolume > rightvolmax){
-    rightvolmax = rightvolume;
-
-    Serial.print("RV ");
-    Serial.println(rightvolmax);
-    
-  }else {
-    rightvolmax--;
-
-    if(rightvolmax < 0){
-      rightvolmax = 0;
-    }
-  }*/
 
   //left side
   for(uint16_t i=0; i<length; i++) {
@@ -92,33 +76,10 @@ void loop()
         strip.setPixelColor(i, Wheel(GetNextColor()));
       }
   }
-  
-
-  //right side
-  /*
-  for(uint16_t i=0; i<half; i++) {
-      int rightbounds = map(i, 0, 150, 0, 255);
-      if(i <= rightvolume)
-      {
-        strip.setPixelColor(half+i, Color(rightbounds, 255-rightbounds, 0));
-        //strip.setPixelColor(half+i, Wheel(GetNextColor()));
-      }
-      else
-      {
-        strip.setPixelColor(half+i, Color(0, 0, 0));
-      }
-
-      if (i == rightvolmax){
-        //strip.setPixelColor(half+i, Color(0, rightbounds, 255-rightbounds));
-        strip.setPixelColor(half+i, Wheel(GetNextColor()));
-      }
-  }*/
-
-  
   strip.show();
   
   //delay ms
-  //delay(5);
+  delay(50);
 }
 
 int GetNextColor()

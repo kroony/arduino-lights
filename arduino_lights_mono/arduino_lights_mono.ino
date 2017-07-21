@@ -2,40 +2,29 @@
 #include <Adafruit_NeoPixel.h>
 
 //Analog Input Pins
-int left_channel = 0;
-int right_channel = 1;
+int aux = 0;
 
-//dynamic analogue max
-int leftmaxinput = 1;
-int rightmaxinput = 1;
-byte leftmaxresetlagcount = 0;
-byte rightmaxresetlagcount = 0;
-int flashdifference = 40;
 
 //Set Strip Constants
 const int length = 300;
-const bool bassFlash = 0;
-//const byte half = length/2;
 
 //Library Setup
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(length, 6, NEO_GRB + NEO_KHZ800);
 
 //Set up arrays for cycling through all the pixels.  I'm assuming you have an even number of lights.
-byte left_array[length];
-//byte right_array[half];
-
-//unsigned int left_array[half];
-//unsigned int right_array[half];
+int light_array[length];
 
 void setup()
 {
   //Initialize Serial Connection (for debugging)
   Serial.begin(9600);
+
+  Serial.println("ON");
   
   //Fill pixel arrays with zeros
   for(int i=0; i<length;i++)
   {
-    left_array[i] = 0;
+    light_array[i] = 0;
     //right_array[i] = 0;
   }
   
@@ -47,111 +36,73 @@ void setup()
 void loop()
 {
   //Read audio
-  int leftRead = analogRead(left_channel);
-  int rightRead = analogRead(right_channel);
-  
+  int Read = analogRead(aux);
+  Serial.println(Read);
+  int mappedinput = Read;
   //Print out some Debug Info if we raise the max bounds
-  if(leftRead > leftmaxinput){
-    leftmaxinput = leftRead;
+  /*if(Read > maxinput){
+    maxinput = Read;
 
-    Serial.print("L ");
-    Serial.println(leftmaxinput);  
-  }
-  
-  if(rightRead > rightmaxinput){
-    rightmaxinput = rightRead;
+    Serial.print("In+ ");
+    Serial.println(maxinput);  
+  }*/
 
-    Serial.print("R ");
-    Serial.println(rightmaxinput);
-  }
-  
-  if(leftRead == 0){//if audio is flat for 10 loops, drop the max input
-    leftmaxresetlagcount++;
-    if(leftmaxresetlagcount >= 20 && leftmaxinput != 10){
-      leftmaxresetlagcount = 0;
-      leftmaxinput = 10;
-      Serial.println("VL");//V for down arrow, its been reset
-    }
-  } else{
-    leftmaxresetlagcount = 0;
-  }
-
-  if(rightRead == 0){//if audio is flat for 10 loops, drop the max input
-    rightmaxresetlagcount++;
-    if(rightmaxresetlagcount >= 20 && rightmaxinput != 10){
-      rightmaxresetlagcount = 0;
-      rightmaxinput = 10;
-      Serial.println("VR");//V for down arrow, its been reset
-    }
-  } else{
-    rightmaxresetlagcount = 0;
-  }
-  
-  if(leftmaxinput < 1){
-    leftmaxinput = 1;
-  }
-
-  if(rightmaxinput < 1){
-    rightmaxinput = 1;
-  }
-
-  if(bassFlash)
+  //Print out some Debug Info if we lower the min bounds
+  /*if(Read < mininput)
   {
-    if(leftRead > leftmaxinput/10*8){
-      flashLeft(Wheel(constrain(map(leftRead, leftmaxinput/10*8, leftmaxinput, 0, 255), 0, 255)));
-      //delay(10);
-    }
-  }
+    mininput = Read;
 
-  if(rightRead > rightmaxinput/10*8){
-    flashRight(Wheel(constrain(map(rightRead, rightmaxinput/10*8, rightmaxinput, 0, 255), 0, 255)));
-    //delay(10);
+    Serial.print("In- ");
+    Serial.println(mininput);
   }
+  
+  if(Read <= mininput){//if audio is flat for 10 loops, drop the max input
+    resetlagcount++;
+    if(resetlagcount >= 25){
+      resetlagcount = 0;
+      mininput = 0;
+      //maxinput = 1;
+      Serial.println("Reset");//its been reset
+    }
+  } else{
+    resetlagcount = 0;
+  }*/
+
+  //mappedinput = constrain(map(Read, mininput, maxinput, 0, 1023), 0, 1023);
+  
+  /*Serial.print("Raw ");
+  Serial.print(Read);
+  Serial.print(" Min:");
+  Serial.print(mininput);
+  Serial.print(" Max:");
+  Serial.print(maxinput);
+  Serial.print(" Map:");
+  Serial.println(mappedinput);*/
   
   //Set the hue (0-1023) and 24-bit color depending on left channel value
-  int hue_left = constrain(map(leftRead, 0, leftmaxinput, 0, 255), 0, 255);
-  
-  //Set the hue (0-1023) and 24-bit color depending on right channel value
-  int hue_right = constrain(map(rightRead, 0, rightmaxinput, 0, 255), 0, 255);
+  int hue = mappedinput;
   
   //Shift the current values.
   for (int i = 0; i<length-1; i++)
   {
-    left_array[i] = left_array[i+1];
-    //right_array[i] = right_array[i+1];
+    light_array[i] = light_array[i+1];
   }
   
   //Fill in the new value at the end of each array
-  left_array[length-1] = hue_left;
-  //right_array[half-1] = hue_right;
+  light_array[length-1] = hue;
   
   //Go through each Pixel on the strip and set its color
   for (int i=0; i<length; i++)
   {
     //set pixel color
-    strip.setPixelColor(i, Wheel(left_array[i]));
-    //strip.setPixelColor(length-i-1, Wheel(right_array[i]));
+    strip.setPixelColor(i, Wheel(light_array[i]));
   }
 
   //display new frame on lights
   strip.show();
   
   //delay ms
-  //delay(10);
-}
-
-void flashLeft(uint32_t c) {
-  for(uint16_t i=0; i<length; i++) {
-      strip.setPixelColor(i, c);
-  }
-  strip.show();
-}
-
-void flashRight(uint32_t c) {
-  for(uint16_t i=0; i<length; i++) {
-      strip.setPixelColor(length-i-1, c);
-  }
-  strip.show();
+  delay(1);
 }
 
 // Create a 24 bit color value from R,G,B
@@ -168,17 +119,20 @@ uint32_t Color(byte r, byte g, byte b)
 
 //Input a value 0 to 255 to get a color value.
 //The colours are a transition r - g -b - back to r
-uint32_t Wheel(byte WheelPos)
+uint32_t Wheel(int WheelPos)
 {
+  byte quart = map(WheelPos, 0, 1023, 0, 255);
   if (WheelPos == 0){
     return Color(0, 0, 0);
-  } else if (WheelPos < 85) {
-   return Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  } else if (WheelPos < 170) {
-   WheelPos -= 85;
-   return Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if (WheelPos <= 340) {
+   return Color(quart * 3      , 255 - quart * 3, 0);
+  } else if (WheelPos <= 680) {
+   WheelPos -= 340;
+   quart = map(WheelPos, 0, 1023, 0, 255);
+   return Color(255 - quart * 3, 0              , quart * 3);
   } else {
-   WheelPos -= 170; 
-   return Color(0, WheelPos * 3, 255 - WheelPos * 3);
+   WheelPos -= 680; 
+   quart = map(WheelPos, 0, 1023, 0, 255);
+   return Color(0              , quart * 3      , 255 - quart * 3);
   }
 }
