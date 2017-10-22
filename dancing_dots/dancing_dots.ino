@@ -3,7 +3,6 @@
 
 //Library Setup
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
-byte maxDots = 20;
 
 bool wasHighLast = false;
 
@@ -153,18 +152,8 @@ class DotObject
     }
 };
 
-//initiate 9 dots
-DotObject dot1;
-DotObject dot2;
-DotObject dot3;
-DotObject dot4;
-DotObject dot5;
-DotObject dot6;
-DotObject dot7;
-DotObject dot8;
-DotObject dot9;
-
-DotObject dotArray[maxDots];
+//initiate dots
+DotObject dotArray[20];
 
 void setup()
 {
@@ -184,10 +173,10 @@ void loop()
 
   if (digitalRead(10) == HIGH) {//when port 10 pressed, try activate an inactive dot
     if (!wasHighLast) {
-      for(byte x = 0; x < maxDots; x++) {
+      for(byte x = 0; x < 20; x++) {
         if(!dotArray[x].active) {
           dotArray[x].activate();
-          x = maxDots;
+          x = 20;
         }
       }
     }
@@ -197,7 +186,7 @@ void loop()
   }
 
   //run each dots loop
-  for(byte x = 0; x < maxDots; x++) {
+  for(byte x = 0; x < 20; x++) {
     if(dotArray[x].active) {
       dotArray[x].loop();
     }
