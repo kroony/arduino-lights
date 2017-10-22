@@ -3,6 +3,7 @@
 
 //Library Setup
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
+byte maxDots = 20;
 
 bool wasHighLast = false;
 
@@ -10,13 +11,12 @@ class DotObject
 {
   public:
     bool active = false;
-    int location;
+    double location;
     byte color256;
-    int velocity;
+    double velocity;
     uint32_t color;
     bool explosion = false;
     int explosionLocation;
-    byte explosionColor;
     byte explosionTimer = 0;
 
     int GetNextColor()
@@ -74,11 +74,13 @@ class DotObject
 
     void activate() {
       active = true;
-      color256 = random(0, 255);
+      color256 = random(0, 256);
+      Serial.print("Color ");
+      Serial.println(color256);
       color = Wheel(color256);
-      velocity = random(1, 3);
-      /*if      (velocity < 0) {location = 300;}
-        else if (velocity > 0) {location = 0;}*/
+      velocity = random(1, 31)/10.0;
+      Serial.print("velocity ");
+      Serial.println(velocity);
       location = 0;
     }
 
@@ -92,22 +94,22 @@ class DotObject
         }
 
         //set the dot color itself
-        strip.setPixelColor(location, Wheel(color256));
+        strip.setPixelColor(round(location), Wheel(color256));
 
         //add a 2 pixel trail
         if (velocity > 0) {
-          strip.setPixelColor(location - 1, WheelBrightness(color256, 100));
-          strip.setPixelColor(location - 2, WheelBrightness(color256, 50));
+          strip.setPixelColor(round(location - 1), WheelBrightness(color256, 100));
+          strip.setPixelColor(round(location - 2), WheelBrightness(color256, 50));
         }
         else if (velocity < 0) {
-          strip.setPixelColor(location + 1, WheelBrightness(color256, 100));
-          strip.setPixelColor(location + 2, WheelBrightness(color256, 50));
+          strip.setPixelColor(round(location + 1), WheelBrightness(color256, 100));
+          strip.setPixelColor(round(location + 2), WheelBrightness(color256, 50));
         }
 
         //explode the dot and decative it randomly on in 300
         if (random(1, 300) == 5) {
           explosion = true;
-          explosionLocation = location;
+          explosionLocation = round(location);
           explosionTimer = 10;
           velocity = 0; // stop moving dot
           location = 350; // move dot far away enough that more explosions dont make weirdness on the ends
@@ -162,6 +164,8 @@ DotObject dot7;
 DotObject dot8;
 DotObject dot9;
 
+DotObject dotArray[maxDots];
+
 void setup()
 {
   randomSeed(analogRead(0));
@@ -180,32 +184,11 @@ void loop()
 
   if (digitalRead(10) == HIGH) {//when port 10 pressed, try activate an inactive dot
     if (!wasHighLast) {
-      if     (!dot1.active) {
-        dot1.activate();
-      }
-      else if (!dot2.active) {
-        dot2.activate();
-      }
-      else if (!dot3.active) {
-        dot3.activate();
-      }
-      else if (!dot4.active) {
-        dot4.activate();
-      }
-      else if (!dot5.active) {
-        dot5.activate();
-      }
-      else if (!dot6.active) {
-        dot6.activate();
-      }
-      else if (!dot7.active) {
-        dot7.activate();
-      }
-      else if (!dot8.active) {
-        dot8.activate();
-      }
-      else if (!dot9.active) {
-        dot9.activate();
+      for(byte x = 0; x < maxDots; x++) {
+        if(!dotArray[x].active) {
+          dotArray[x].activate();
+          x = maxDots;
+        }
       }
     }
     wasHighLast = true;//check for new press of button not just hold down.
@@ -214,20 +197,16 @@ void loop()
   }
 
   //run each dots loop
-  dot1.loop();
-  dot2.loop();
-  dot3.loop();
-  dot4.loop();
-  dot5.loop();
-  dot6.loop();
-  dot7.loop();
-  dot8.loop();
-  dot9.loop();
+  for(byte x = 0; x < maxDots; x++) {
+    if(dotArray[x].active) {
+      dotArray[x].loop();
+    }
+  }
 
   //push light array out
   strip.show();
   
   //delay ms
-  delay(50);
+  delay(40);
 }
 
