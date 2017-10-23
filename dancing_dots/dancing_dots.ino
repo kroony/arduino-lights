@@ -13,20 +13,10 @@ class DotObject
     double location;
     byte color256;
     double velocity;
-    uint32_t color;
     bool explosion = false;
     int explosionLocation;
     byte explosionTimer = 0;
-
-    int GetNextColor()
-    {
-      color256++;
-      if (color256 > 255)
-      {
-        color256 = 0;
-      }
-      return color256;
-    }
+    byte collisions = 0;
 
     uint32_t Color(byte r, byte g, byte b)
     {
@@ -76,11 +66,52 @@ class DotObject
       color256 = random(0, 256);
       Serial.print("Color ");
       Serial.println(color256);
-      color = Wheel(color256);
       velocity = random(1, 31)/10.0;
       Serial.print("velocity ");
       Serial.println(velocity);
       location = 0;
+      collisions = 0;
+    }
+
+    void addCollision() {
+      collisions++;
+      if (collisions == random(collisions, 51)) {
+        explode();
+      }
+      
+    }
+
+    void explode() {
+      explosion = true;
+      explosionLocation = round(location);
+      explosionTimer = 10;
+      velocity = 0; // stop moving dot
+      location = 350; // move dot far away enough that more explosions dont make weirdness on the ends
+
+      //single frame explosion + and - 10 pixel from the last location
+      strip.setPixelColor(explosionLocation + 10, WheelBrightness(color256, 25));
+      strip.setPixelColor(explosionLocation + 9, WheelBrightness(color256, 50));
+      strip.setPixelColor(explosionLocation + 8, WheelBrightness(color256, 75));
+      strip.setPixelColor(explosionLocation + 7, WheelBrightness(color256, 100));
+      strip.setPixelColor(explosionLocation + 6, WheelBrightness(color256, 125));
+      strip.setPixelColor(explosionLocation + 5, WheelBrightness(color256, 150));
+      strip.setPixelColor(explosionLocation + 4, WheelBrightness(color256, 175));
+      strip.setPixelColor(explosionLocation + 3, WheelBrightness(color256, 200));
+      strip.setPixelColor(explosionLocation + 2, WheelBrightness(color256, 225));
+      strip.setPixelColor(explosionLocation + 1, WheelBrightness(color256, 250));
+
+      strip.setPixelColor(explosionLocation, WheelBrightness(color256, 255));
+
+      strip.setPixelColor(explosionLocation - 10, WheelBrightness(color256, 25));
+      strip.setPixelColor(explosionLocation - 9, WheelBrightness(color256, 50));
+      strip.setPixelColor(explosionLocation - 8, WheelBrightness(color256, 75));
+      strip.setPixelColor(explosionLocation - 7, WheelBrightness(color256, 100));
+      strip.setPixelColor(explosionLocation - 6, WheelBrightness(color256, 125));
+      strip.setPixelColor(explosionLocation - 5, WheelBrightness(color256, 150));
+      strip.setPixelColor(explosionLocation - 4, WheelBrightness(color256, 175));
+      strip.setPixelColor(explosionLocation - 3, WheelBrightness(color256, 200));
+      strip.setPixelColor(explosionLocation - 2, WheelBrightness(color256, 225));
+      strip.setPixelColor(explosionLocation - 1, WheelBrightness(color256, 250));
     }
 
     void loop() {
@@ -104,49 +135,14 @@ class DotObject
           strip.setPixelColor(round(location + 1), WheelBrightness(color256, 100));
           strip.setPixelColor(round(location + 2), WheelBrightness(color256, 50));
         }
-
-        //explode the dot and decative it randomly on in 300
-        if (random(1, 300) == 5) {
-          explosion = true;
-          explosionLocation = round(location);
-          explosionTimer = 10;
-          velocity = 0; // stop moving dot
-          location = 350; // move dot far away enough that more explosions dont make weirdness on the ends
-
-          //single frame explosion + and - 10 pixel from the last location
-          strip.setPixelColor(explosionLocation + 10, WheelBrightness(color256, 25));
-          strip.setPixelColor(explosionLocation + 9, WheelBrightness(color256, 50));
-          strip.setPixelColor(explosionLocation + 8, WheelBrightness(color256, 75));
-          strip.setPixelColor(explosionLocation + 7, WheelBrightness(color256, 100));
-          strip.setPixelColor(explosionLocation + 6, WheelBrightness(color256, 125));
-          strip.setPixelColor(explosionLocation + 5, WheelBrightness(color256, 150));
-          strip.setPixelColor(explosionLocation + 4, WheelBrightness(color256, 175));
-          strip.setPixelColor(explosionLocation + 3, WheelBrightness(color256, 200));
-          strip.setPixelColor(explosionLocation + 2, WheelBrightness(color256, 225));
-          strip.setPixelColor(explosionLocation + 1, WheelBrightness(color256, 250));
-
-          strip.setPixelColor(explosionLocation, WheelBrightness(color256, 255));
-
-          strip.setPixelColor(explosionLocation - 10, WheelBrightness(color256, 25));
-          strip.setPixelColor(explosionLocation - 9, WheelBrightness(color256, 50));
-          strip.setPixelColor(explosionLocation - 8, WheelBrightness(color256, 75));
-          strip.setPixelColor(explosionLocation - 7, WheelBrightness(color256, 100));
-          strip.setPixelColor(explosionLocation - 6, WheelBrightness(color256, 125));
-          strip.setPixelColor(explosionLocation - 5, WheelBrightness(color256, 150));
-          strip.setPixelColor(explosionLocation - 4, WheelBrightness(color256, 175));
-          strip.setPixelColor(explosionLocation - 3, WheelBrightness(color256, 200));
-          strip.setPixelColor(explosionLocation - 2, WheelBrightness(color256, 225));
-          strip.setPixelColor(explosionLocation - 1, WheelBrightness(color256, 250));
-        }
-
-        if (explosion) {
-          strip.setPixelColor(explosionLocation + (10 - explosionTimer), WheelBrightness(color256, 25 * explosionTimer));
-          strip.setPixelColor(explosionLocation - (10 - explosionTimer), WheelBrightness(color256, 25 * explosionTimer));
-          explosionTimer--;
-          if (explosionTimer == 0) {
-            explosion = false;
-            active = false;
-          }
+      }
+      if (explosion) {//do the after explode shock wave
+        strip.setPixelColor(explosionLocation + (10 - explosionTimer), WheelBrightness(color256, 25 * explosionTimer));
+        strip.setPixelColor(explosionLocation - (10 - explosionTimer), WheelBrightness(color256, 25 * explosionTimer));
+        explosionTimer--;
+        if (explosionTimer == 0) {
+          explosion = false;
+          active = false;
         }
       }
     }
@@ -187,8 +183,63 @@ void loop()
 
   //run each dots loop
   for(byte x = 0; x < 20; x++) {
-    if(dotArray[x].active) {
-      dotArray[x].loop();
+    dotArray[x].loop();
+  }
+
+  //collision detection
+  for(byte x = 0; x != 20; ++x) {
+    for(byte y = 0; y != x; ++y) {
+      if(dotArray[x].active && dotArray[y].active){//dont check unless they are both active
+        double loc1_o = dotArray[x].location;
+        double loc1_n = loc1_o + dotArray[x].velocity;
+        double loc2_o = dotArray[y].location;
+        double loc2_n = loc2_o + dotArray[y].velocity;
+
+        if(testOverlap(min(loc1_o, loc1_n), max(loc1_o, loc1_n), min(loc2_o, loc2_n), max(loc2_o, loc2_n))){
+          
+          if(signbit(dotArray[x].velocity) == signbit(dotArray[y].velocity))
+          {//traveling in the same direction
+            //Serial.println("same direction collision");
+            //swap velocity
+            double tmpVelocity = dotArray[x].velocity;
+            dotArray[x].velocity = dotArray[y].velocity;
+            dotArray[y].velocity = tmpVelocity;
+
+            //change color a little bit
+            dotArray[x].color256 = shiftColor(dotArray[x].color256, 2);
+            dotArray[y].color256 = shiftColor(dotArray[y].color256, 2);
+
+            //add to collision count
+            dotArray[x].addCollision();
+            dotArray[y].addCollision();
+          } 
+          else 
+          { //traveling towards each other
+            //turn around
+            dotArray[x].velocity = dotArray[x].velocity * -1;
+            dotArray[y].velocity = dotArray[y].velocity * -1;
+
+            //change color a little bit more
+            dotArray[x].color256 = shiftColor(dotArray[x].color256, 4);
+            dotArray[y].color256 = shiftColor(dotArray[y].color256, 4);
+
+            //add to collision count
+            dotArray[x].addCollision();
+            dotArray[y].addCollision();
+            
+            //Serial.println("opposing collision");
+          }
+        }
+
+
+
+
+        /*double largerVelocity = max(abs(dotArray[x].velocity), abs(dotArray[y].velocity));
+        if(dotArray[x].location - dotArray[y].location < largerVelocity && dotArray[x].location - dotArray[y].location > largerVelocity * -1.0) {
+          //collision
+          Serial.println("Collide");
+        }*/
+      }
     }
   }
 
@@ -197,5 +248,26 @@ void loop()
   
   //delay ms
   delay(40);
+}
+
+bool overlap(double a, double b, double c) {
+ return min(b,c) > a && b < max(b,c);
+}
+
+bool testOverlap(int x1, int x2, int y1, int y2) {
+  return (x1 >= y1 && x1 <= y2) ||
+         (x2 >= y1 && x2 <= y2) ||
+         (y1 >= x1 && y1 <= x2) ||
+         (y2 >= x1 && y2 <= x2);
+}
+
+int shiftColor(byte color, byte shift)
+{
+  color = color + shift;
+  if (color > 255)
+  {
+    color = color - 255;
+  }
+  return color;
 }
 
