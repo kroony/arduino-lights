@@ -80,6 +80,7 @@ void loop() {
 }
 
 void displayLights(int light) {
+    light = light + 50;
     strip.clear();
     strip.setPixelColor(light - 13, strip.Color(10, 10, 10));
     strip.setPixelColor(light - 12, strip.Color(10, 10, 10));
