@@ -79,7 +79,7 @@ void loop()
   strip.show();
   
   //delay ms
-  delay(50);
+  delay(500);
 }
 
 int GetNextColor()
