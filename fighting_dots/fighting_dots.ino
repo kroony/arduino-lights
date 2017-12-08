@@ -4,35 +4,25 @@
 //Library Setup
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
 
-void displayDigit(int number);
+//Includes for 16x2 LCD
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+// Set the LCD address to 0x3f for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x3f, 16, 2);
 
-const byte totalScore = 19;
+void displayDigit(int number);
+void writeScores();
+
+const byte totalScore = 20;
 
 byte scoreBlue = totalScore;
 byte scoreRed = totalScore;
+byte previousBlueScore = totalScore;
+byte previousRedScore = totalScore;
 
-class Button
-{
-public:
-  const byte pin;
-  bool last;
+bool gameActive = false;
 
-  Button(byte pin_) : pin(pin_), last(false)
-  { }
-
-  bool pressed()
-  {
-    if (digitalRead(pin) == HIGH)
-    {
-      if (last) return false;
-      last = true;
-      return true;
-    } else {
-      last = false;
-      return false;
-    }
-  }
-};
+const byte DOT_ARRAY_SIZE = 2;
 
 class DotObject
 {
@@ -62,7 +52,6 @@ class DotObject
       return Color(r * bright, g * bright, b * bright);
     }
     
-
     void activate(bool teamRed_, bool attack_) {
       active = true;
       attack = attack_;
@@ -73,8 +62,8 @@ class DotObject
         velocity *= -1;
       }
       location = teamRed ? 0 : 300;
+      writeScores();
     }
-
 
     void loop() {
       if (active) {
@@ -110,20 +99,13 @@ class DotObject
             // increment score counter for red
             active = false;
             scoreBlue--;
+            writeScores();
             
-            Serial.println("Red scores!");
-            Serial.print(scoreRed);
-            Serial.print(" R / B ");
-            Serial.println(scoreBlue);
           } else if (location < 0 && !teamRed) {
             // increment score counter for blue
             active = false;
             scoreRed--;
-
-            Serial.println("Blue scores!");
-            Serial.print(scoreRed);
-            Serial.print(" R / B ");
-            Serial.println(scoreBlue);
+            writeScores();
           }
         } else {
           if (location < 151 && !teamRed) {
@@ -133,9 +115,11 @@ class DotObject
           } else if (location > 299 && !teamRed) {
             // dead defense
             active = false;
+            writeScores();
           } else if (location < 0 && teamRed) {
             // dead defense
             active = false;
+            writeScores();
           }
         }
       }
@@ -149,11 +133,6 @@ class DotObject
     }
 };
 
-
-
-int outputCount = 0;
-
-const byte DOT_ARRAY_SIZE = 2;
 //initiate dots
 DotObject dotsBlue[DOT_ARRAY_SIZE];
 DotObject dotsRed[DOT_ARRAY_SIZE];
@@ -161,35 +140,20 @@ DotObject dotsRed[DOT_ARRAY_SIZE];
 void setup()
 {
   randomSeed(analogRead(0));
+  
   //Initialize Serial Connection (for debugging)
   Serial.begin(9600);
   delay(250);
-  //Initialize Strip
+  
+  //Initialize Strips
   strip.begin();
   strip.show();
 
-  digitDisplaySetup();
+  // initialize the LCD
+  initaliseLCD();
+
+  startNewGame();
 }
-
-
-Button buttonBlueDefend(1), buttonBlueAttack(2),
-       buttonRedDefend(3), buttonRedAttack(4);
-
-byte dotsCountActive(DotObject* dots) {
-  byte active = 0;
-  for (byte i = 0; i != DOT_ARRAY_SIZE; ++i) {
-    if (dots[i].active) active++;
-  }
-  return active;
-}
-
-int dotIndexInactive(DotObject* dots) {
-  for (byte i = 0; i != DOT_ARRAY_SIZE; ++i) {
-    if (!dots[i].active) return i;
-  }
-  return -1;
-}
-
 
 void loop()
 {
@@ -205,7 +169,7 @@ void loop()
     }
   }*/
 
-  int inactiveRed= dotIndexInactive(dotsRed);
+  int inactiveRed = dotIndexInactive(dotsRed);
   /*if (inactiveRed != -1) {
     if (buttonRedDefend.pressed()) {
       dotsRed[inactiveRed].activate(true, false);
@@ -215,129 +179,77 @@ void loop()
     }
   }*/
 
-  //run each dots loop
-  for(byte x = 0; x < DOT_ARRAY_SIZE; x++) {
-    dotsBlue[x].loop();
-    dotsRed[x].loop();
-  }
-  displayDigit(scoreRed);
+  if(gameActive)
+  {
+    runDotsLoop();
+    collisionDetection();
 
-  //collision detection
-  for(byte x = 0; x != DOT_ARRAY_SIZE; ++x) {
-    for(byte y = 0; y != DOT_ARRAY_SIZE; ++y) {
-      DotObject &blue = dotsBlue[x];
-      DotObject &red  = dotsRed[y];
-      if(blue.active && red.active){//dont check unless they are both active
-        double loc1_o = blue.location;
-        double loc1_n = loc1_o + blue.velocity;
-        double loc2_o = red.location;
-        double loc2_n = loc2_o + red.velocity;
+    // display the board markers
+    strip.setPixelColor(0, DotObject::Color(255,0,0));
+    strip.setPixelColor(150, DotObject::Color(255,255,255));
+    strip.setPixelColor(299, DotObject::Color(0,0,255));
 
-        if(testOverlap(min(loc1_o, loc1_n), max(loc1_o, loc1_n), min(loc2_o, loc2_n), max(loc2_o, loc2_n))){
-          if (blue.attack != red.attack) {
-            if (signbit(blue.velocity) == signbit(red.velocity)) {
-              if (blue.attack) {
-                blue.slowdown();
-              } else {
-                red.slowdown();
-              }
-            } else {
-              if (blue.attack) {
-                blue.active = false;
-                red.attack = true;
-                red.velocity *= -1;
-              } else {
-                red.active = false;
-                blue.attack = true;
-                blue.velocity *= -1;
-              }
-            }
-          } else {
-            red.slowdown();
-            blue.slowdown();
-          }
-        }
-      }
+    checkForWin();
+    
+    if (random(0,100) == 0 && inactiveBlue != -1) {//random create a blue dot
+      dotsBlue[inactiveBlue].activate(false, random(0,2));
     }
+  
+    if (random(0,100) == 0 && inactiveRed != -1) {//random create a red dot
+      dotsRed[inactiveRed].activate(true, random(0,2));
+    }
+  
+  }
+  else
+  {
+    //check for button press to start new game perhaps coin mech?
+    startNewGame();
   }
   
-
-  //push light array out
-  strip.setPixelColor(0, DotObject::Color(255,0,0));
-  strip.setPixelColor(150, DotObject::Color(255,255,255));
-  strip.setPixelColor(299, DotObject::Color(0,0,255));
   strip.show();
   
   //delay ms
   delay(15);
+}
 
-  //output debug
-  outputCount++;
-
-  //outputDebug(outputCount % 20);
-  if(outputCount > 500) {
-    outputCount = 0;
-  }
-  
-    if (random(0,100) == 0 && inactiveBlue != -1) {
-      dotsBlue[inactiveBlue].activate(false, random(0,2));
-    }
-
-    if (random(0,100) == 0 && inactiveRed != -1) {
-      dotsRed[inactiveRed].activate(true, random(0,2));
-    }
-
-  if (scoreBlue == 0) {
-    winner(true);
-  }
-
-  if (scoreRed == 0) {
-    winner(false);
-  }
-
+void checkForWin()
+{
+  if (scoreBlue == 0) { winner(true); }
+  if (scoreRed == 0) { winner(false); }
 }
 
 void winner(bool teamRed)
 {
+  gameActive = false;
+  writeWinner(teamRed);
+  
   uint32_t col = teamRed ? DotObject::Color(255,0,0) : DotObject::Color(0,0,255);
 
   for (int i = 0; i != 150; ++i) {
     strip.setPixelColor(i, DotObject::brightness(col, i / 150.0));
     strip.setPixelColor(299 - i, DotObject::brightness(col, i / 150.0));
     strip.show();
-
-    displayDigit(scoreRed);
     delay(50);
   }
   delay(1000);
+}
 
+void startNewGame()
+{
   scoreRed = totalScore;
   scoreBlue = totalScore;
   for (int i = 0; i != DOT_ARRAY_SIZE; ++i) {
     dotsRed[i].active = false;
     dotsBlue[i].active = false;
   }
+
+  typeText("Fighting Dots", "A Line Game");
+  delay(500);
+  typeText("Made By Amos", "& Bill");
+  delay(1000);
+  typeText("New Game In", "3...2...1...");
+  
+  gameActive = true;
+  writeScores();
 }
 
-bool testOverlap(int x1, int x2, int y1, int y2) {
-  return (x1 >= y1 && x1 <= y2) ||
-         (x2 >= y1 && x2 <= y2) ||
-         (y1 >= x1 && y1 <= x2) ||
-         (y2 >= x1 && y2 <= x2);
-}
-/*
-void outputDebug(int x) {
-  if (dotArray[x].active) {
-    Serial.print("Dot ");
-    Serial.print(x);
-    Serial.print(" - Active: ");
-    Serial.print(dotArray[x].active);
-    Serial.print(", Collisions: ");
-    Serial.print(dotArray[x].collisions);
-    Serial.print(", Location: ");
-    Serial.println(dotArray[x].location);
-  } else {
-    Serial.print("");
-  }
-}
-*/
