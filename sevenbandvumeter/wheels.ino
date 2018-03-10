@@ -87,19 +87,19 @@ uint32_t rgFadeWheel(byte WheelPos)//off->red->green
 }
 
 
-uint32_t gpWheel(byte WheelPos)
+uint32_t gpWheel(byte WheelPos) //green->purple
 {
   if(WheelPos < 127) { return Color(WheelPos, 255, WheelPos); }
   else               { return Color(255, 255 - WheelPos, 255); }
 }
 
-uint32_t byWheel(byte WheelPos)
+uint32_t byWheel(byte WheelPos) //blue->yellow
 {
   if(WheelPos < 127) { return Color(WheelPos, WheelPos, 255); }
   else { return Color(255, 255, 255 - WheelPos); }
 }
 
-uint32_t rcWheel(byte WheelPos)
+uint32_t rcWheel(byte WheelPos) //red->cyan
 {
   if(WheelPos < 127) { return Color(255, WheelPos, WheelPos); }
   else { return Color(255 - WheelPos, 255, 255); }
