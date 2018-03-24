@@ -1,6 +1,11 @@
 #include <AudioAnalyzer.h>
 #include <Adafruit_NeoPixel.h>
 
+//RF
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
 //PIN Definition
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
@@ -13,6 +18,9 @@ Analyzer Audio = Analyzer(4,5,0);//Strobe pin ->4  RST pin ->5 Analog Pin ->0
 //Analyzer Audio = Analyzer();//Strobe->4 RST->5 Analog->5
 int BottomVolTrim = 100;
 byte quietcounter = 0;
+
+RF24 radio(7, 8); // CE, CSN
+const byte address[6] = "00001";
 
 int FreqVal[7];//
 byte pitch1, pitch2, pitch3, pitch4, pitch5, pitch6, pitch7 = 0; 
@@ -31,6 +39,7 @@ bool waterfall = 0;
 bool VU = 0;
 bool pulse = 0;
 bool strobe = 0;
+bool bloompulse = 0;
 
 bool strobeCurrent = 0;
 
@@ -41,6 +50,7 @@ bool passiveMode = true;
 byte passiveGoalColour = 255;
 byte passiveColour = 0;
 int passiveSilenceCounter = 0;
+byte strobeBuildupCounter = 0;
 
 void setup()
 {
@@ -54,48 +64,66 @@ void setup()
   
   randomSeed(analogRead(5)); //seed the random function
   changeColour(); //start with a random colour
+
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.stopListening();
+
+  delay(500);
 }
 
-void loop()//bloompulse and strobe not used anywhere yet!
+void loop()//bloompulse not used anywhere yet!
 {
+  /*Serial.println("1");
+  char text[] = "Hello";
+  Serial.println("2");
+  radio.write(&text, sizeof(text));
+  Serial.println("3");*/
+  
   //set brightness
   SetBrightness();
   
   getAudioInput(); // get the audio from the MSGEQ7
   checkForPassive(); //checks for no audio 
 
-  /*BloomPulse(0  , 50 , pitch2, colourWheel);
-  BloomPulse(51 , 100, pitch2, colourWheel);
-  BloomPulse(101, 150, pitch2, colourWheel);
-  BloomPulse(151, 200, pitch2, colourWheel);
-  BloomPulse(201, 250, pitch2, colourWheel);
-  BloomPulse(251, 299, pitch2, colourWheel);*/
+  /*
+  //strobe Build up
+  strobeBuildupCounter++;
+  int halfLength = stripLength / 2;
+  if(strobeBuildupCounter == halfLength) { strobeBuildupCounter = 0; }
+  int allFreqAve = (pitch1 + pitch2 + pitch3 + pitch4 + pitch5 + pitch6 + pitch7) / 7;
+  Strobe(halfLength - strobeBuildupCounter, halfLength + strobeBuildupCounter, allFreqAve, colourWheel);
+  //Strobe Buildup end
+  */
+  
 
   if(passiveMode){
     displayPassive();
   } else {
     beatDetection(); // changes pattern
+
     //pick pattern based on bools
     if(waterfall == 1){
       if(true == directionUp) {
         switch(randomFreq){
-          case 1: WaterfallUp(0, stripLength, pitch1, colourWheel); break;
-          case 2: WaterfallUp(0, stripLength, pitch2, colourWheel); break;
-          case 3: WaterfallUp(0, stripLength, pitch3, colourWheel); break;
-          case 4: WaterfallUp(0, stripLength, pitch4, colourWheel); break;
-          case 5: WaterfallUp(0, stripLength, pitch5, colourWheel); break;
-          case 6: WaterfallUp(0, stripLength, pitch6, colourWheel); break;
-          case 7: WaterfallUp(0, stripLength, pitch7, colourWheel); break;
+          case 1: WaterfallUp(0, 299, pitch1, colourWheel); break;
+          case 2: WaterfallUp(0, 299, pitch2, colourWheel); break;
+          case 3: WaterfallUp(0, 299, pitch3, colourWheel); break;
+          case 4: WaterfallUp(0, 299, pitch4, colourWheel); break;
+          case 5: WaterfallUp(0, 299, pitch5, colourWheel); break;
+          case 6: WaterfallUp(0, 299, pitch6, colourWheel); break;
+          case 7: WaterfallUp(0, 299, pitch7, colourWheel); break;
         }
       } else {
         switch(randomFreq){
-          case 1: WaterfallDown(0, stripLength, pitch1, colourWheel); break;
-          case 2: WaterfallDown(0, stripLength, pitch2, colourWheel); break;
-          case 3: WaterfallDown(0, stripLength, pitch3, colourWheel); break;
-          case 4: WaterfallDown(0, stripLength, pitch4, colourWheel); break;
-          case 5: WaterfallDown(0, stripLength, pitch5, colourWheel); break;
-          case 6: WaterfallDown(0, stripLength, pitch6, colourWheel); break;
-          case 7: WaterfallDown(0, stripLength, pitch7, colourWheel); break;
+          case 1: WaterfallDown(0, 299, pitch1, colourWheel); break;
+          case 2: WaterfallDown(0, 299, pitch2, colourWheel); break;
+          case 3: WaterfallDown(0, 299, pitch3, colourWheel); break;
+          case 4: WaterfallDown(0, 299, pitch4, colourWheel); break;
+          case 5: WaterfallDown(0, 299, pitch5, colourWheel); break;
+          case 6: WaterfallDown(0, 299, pitch6, colourWheel); break;
+          case 7: WaterfallDown(0, 299, pitch7, colourWheel); break;
         }
       }
     } else if (pulse == 1) {
@@ -132,13 +160,13 @@ void loop()//bloompulse and strobe not used anywhere yet!
     } else if (VU == 1) {
       switch(randomFreq){
         case 1: 
-          peak1 = VUDown(0  , 43 , pitch1, peak1, colourWheel);
-          peak2 = VUUp(  42 , 86 , pitch2, peak2, colourWheel);
-          peak3 = VUDown(87 , 129, pitch3, peak3, colourWheel);
-          BlockPulse(    130, 171, pitch4, colourWheel);
-          peak5 = VUUp(  172, 214, pitch5, peak5, colourWheel);
-          peak6 = VUDown(215, 257, pitch6, peak6, colourWheel);
-          peak7 = VUUp(  258, 299, pitch7, peak7, colourWheel);
+          peak1 = VUDown( 0   , 43  , pitch1, peak1, colourWheel);
+          peak2 = VUUp(   44  , 86  , pitch2, peak2, colourWheel);
+          peak3 = VUDown( 87  , 129 , pitch3, peak3, colourWheel);
+          BlockPulse(     130 , 171 , pitch4       , colourWheel);//block pulse dont need no peak 
+          peak5 = VUUp(   172 , 214 , pitch5, peak5, colourWheel);
+          peak6 = VUDown( 215 , 257 , pitch6, peak6, colourWheel);
+          peak7 = VUUp(   258 , 299 , pitch7, peak7, colourWheel);
           break;
         case 2:
           BlockPulse(    0  , 50,  pitch1, colourWheel);
@@ -177,7 +205,7 @@ void loop()//bloompulse and strobe not used anywhere yet!
           peak6 = VUUp(  151, 299, (pitch4 + pitch5 + pitch6 + pitch7)/4, peak6, colourWheel); 
           break;
       }
-    } else if (strobe == 1) {
+    } else if (strobe == 1) { //just fuckin' strobe the whole thing, dont get fancy
       switch(randomFreq){
         case 1: Strobe(0, stripLength, pitch1, colourWheel); break;
         case 2: Strobe(0, stripLength, pitch2, colourWheel); break;
@@ -187,9 +215,19 @@ void loop()//bloompulse and strobe not used anywhere yet!
         case 6: Strobe(0, stripLength, pitch6, colourWheel); break;
         case 7: Strobe(0, stripLength, pitch7, colourWheel); break;
       }
+    } else if (bloompulse == 1) { //just bloom pulse, but, chill bro
+      switch(randomFreq){
+        case 1: BloomPulse(0, stripLength, pitch1, colourWheel); break;
+        case 2: BloomPulse(0, stripLength, pitch2, colourWheel); break;
+        case 3: BloomPulse(0, stripLength, pitch3, colourWheel); break;
+        case 4: BloomPulse(0, stripLength, pitch4, colourWheel); break;
+        case 5: BloomPulse(0, stripLength, pitch5, colourWheel); break;
+        case 6: BloomPulse(0, stripLength, pitch6, colourWheel); break;
+        case 7: BloomPulse(0, stripLength, pitch7, colourWheel); break;
+      }
     } else {changePattern();}
   }
-   
+
   strip.show();
   delay(20);
   ClearStrip();
@@ -266,7 +304,7 @@ void beatDetection()
     bassPeak = max(currentBassAverage + 10, 255);
     patternChangeCounter++; //count a beat
   }
-  if(patternChangeCounter > 64) {//try change the pattern every 16 beats
+  if(patternChangeCounter > 16) {//try change the pattern every 16 beats
     patternChangeCounter = 0;
     changePattern();
   }
@@ -277,58 +315,77 @@ void changeColour()
   colourWheel = random(0, 10);//change colour between 0 - 9
 }
 
-void changePatternVU()        { waterfall=0; pulse=0; VU=1; strobe=0; }
-void changePatternPulse()     { waterfall=0; pulse=1; VU=0; strobe=0; }
-void changePatternWaterfall() { waterfall=1; pulse=0; VU=0; strobe=0; }
-void changePatternStrobe()    { waterfall=0; pulse=0; VU=0; strobe=1; }
+void changePatternVU()        { waterfall=0; pulse=0; VU=1; strobe=0; bloompulse=0; } //nah, nah, yea, nah, nah
+void changePatternPulse()     { waterfall=0; pulse=1; VU=0; strobe=0; bloompulse=0; } //nah, yea, nah, nah, nah
+void changePatternWaterfall() { waterfall=1; pulse=0; VU=0; strobe=0; bloompulse=0; } //yea, nah, nah, nah, nah
+void changePatternStrobe()    { waterfall=0; pulse=0; VU=0; strobe=1; bloompulse=0; } //nah, nah, nah, yea, nah
+void changePatternBloomPulse(){ waterfall=0; pulse=0; VU=0; strobe=0; bloompulse=1; } //nah, nah, nah, nah, yea
 
 void changePattern()
 {  
   //if all bools are false, randomly pick one
-  if(waterfall + VU + pulse + strobe != 1) {//if none, or more then one, is picked
-    switch(random(0, 4)){
+  if(waterfall + VU + pulse + strobe + bloompulse != 1) {//if none, or more then one, is picked
+    switch(random(0, 5)){
       case 0: changePatternWaterfall(); break;
       case 1: changePatternVU(); break;
       case 2: changePatternPulse(); break; 
-      default: changePatternStrobe(); break; //also case 3
+      case 3: changePatternStrobe(); break;
+      default: changePatternBloomPulse(); break; //also case 4
     }
   }
   else if(waterfall) //if we are already on waterfall
   {
-    if(random(0,1) == 0) {directionUp = !directionUp;} //50% chance we just change direction
+    if(random(0,2) == 0) {directionUp = !directionUp;} //50% chance we just change direction
     else{
-      switch(random(0, 3)) {
+      switch(random(0, 4)) {
         case 0: changePatternVU(); break;
         case 1: changePatternPulse(); break;
+        case 2: changePatternBloomPulse(); break;
         default: changePatternStrobe(); break;
-      }  
+      } 
+      changeColour(); 
     }
   }
   else if(VU) //if we are already on VU
   {
-    switch(random(0, 3)) {
+    switch(random(0, 4)) {
       case 0: changePatternWaterfall(); break;
       case 1: changePatternPulse(); break;
+      case 2: changePatternBloomPulse(); break;
       default: changePatternStrobe(); break;
     }
+    changeColour();
   }
   else if(pulse) //if we are already on pulse
   {
-    switch(random(0, 3)) {
+    switch(random(0, 4)) {
       case 0: changePatternWaterfall(); break;
       case 1: changePatternVU(); break;
+      case 2: changePatternBloomPulse(); break;
       default: changePatternStrobe(); break;
     }
+    changeColour();
   }
   else if(strobe) //if we are already on strobe
   {
-    switch(random(0, 3)) {
+    switch(random(0, 4)) {
       case 0: changePatternWaterfall(); break;
       case 1: changePatternVU(); break;
+      case 2: changePatternBloomPulse(); break;
       default: changePatternPulse(); break;
     }
+    changeColour();
   }
-  changeColour();
+  else if(bloompulse)
+  {
+    switch(random(0, 4)) {
+      case 0: changePatternWaterfall(); break;
+      case 1: changePatternVU(); break;
+      case 2: changePatternStrobe(); break;
+      default: changePatternPulse(); break;
+    }
+    changeColour();
+  }
   randomFreq = random(1,8);
   debugOutput();
 }
@@ -336,16 +393,13 @@ void changePattern()
 void debugOutput()
 {
   Serial.println("-----");
-  Serial.print("VU:");
-  Serial.print(VU);
-  Serial.print(" Pulse:");
-  Serial.print(pulse);
-  Serial.print(" Strobe:");
-  Serial.print(strobe);
-  Serial.print(" Waterfall:");
-  Serial.print(waterfall);
-  Serial.print(" Waterfall Direction:");
-  Serial.print(directionUp);
+  if(VU)        { Serial.print("VU"); }
+  if(pulse)     { Serial.print("Pulse"); }
+  if(strobe)    { Serial.print("Strobe"); }
+  if(bloompulse){ Serial.print("Bloom Pulse"); }
+  if(waterfall) { Serial.print("Waterfall");  Serial.print(" DirectionUP:");  Serial.print(directionUp); }
+  Serial.print(" | Freq:");  Serial.print(randomFreq);
+  Serial.print(" Colour Wheel:");  Serial.print(colourWheel);
   Serial.println("");
   
 }

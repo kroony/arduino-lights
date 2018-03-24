@@ -81,7 +81,7 @@ byte VUUp(int StartPos, int EndPos, byte Freq, byte MaxFreq, byte ColourSelector
 }
 
 
-byte BlockPulse(int StartPos, int EndPos, byte Freq, byte ColourSelector)
+void BlockPulse(int StartPos, int EndPos, byte Freq, byte ColourSelector)
 {
   int totalLength = EndPos - StartPos + 1;
 
@@ -102,13 +102,66 @@ byte BlockPulse(int StartPos, int EndPos, byte Freq, byte ColourSelector)
   }
 }
 
+void BloomPulse(int StartPos, int EndPos, byte Freq, byte ColourSelector)
+{
+  int totalLength = EndPos - StartPos + 1;
+  int halfLength = (EndPos - StartPos) / 2;
+  int scaleFreq = map(Freq, 0, 255, 0, halfLength);
+  for(int i=0; i<halfLength+1; i++)
+  {
+    switch (ColourSelector) {
+      case 0: 
+        strip.setPixelColor(StartPos + halfLength + i, grFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, grFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 1: 
+        strip.setPixelColor(StartPos + halfLength + i, rbFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, rbFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 2: 
+        strip.setPixelColor(StartPos + halfLength + i, bgFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, bgFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 3: 
+        strip.setPixelColor(StartPos + halfLength + i, gbFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, gbFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 4: 
+        strip.setPixelColor(StartPos + halfLength + i, brFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, brFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 5: 
+        strip.setPixelColor(StartPos + halfLength + i, rgFadeWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, rgFadeWheel(max(scaleFreq - i,0)));
+        break;
+      case 6: 
+        strip.setPixelColor(StartPos + halfLength + i, gpWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, gpWheel(max(scaleFreq - i,0)));
+        break;
+      case 7: 
+        strip.setPixelColor(StartPos + halfLength + i, byWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, byWheel(max(scaleFreq - i,0)));
+        break;
+      case 8: 
+        strip.setPixelColor(StartPos + halfLength + i, rcWheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, rcWheel(max(scaleFreq - i,0)));
+        break;
+      case 9: 
+        strip.setPixelColor(StartPos + halfLength + i, Wheel(max(scaleFreq - i,0)));
+        strip.setPixelColor(StartPos + halfLength - i, Wheel(max(scaleFreq - i,0)));
+        break;
+    }
+  }
+}
+
 void WaterfallDown(int StartPos, int EndPos, byte Freq, byte ColourSelector)
 {
   int totalLength = EndPos - StartPos + 1;
 
-  for (int i = 0; i<totalLength-1; i++ )//Shift the current values.
+  for (int i = 0; i<totalLength-1 ; i++ )//Shift the current values.
   {
-    history[StartPos+i] = history[StartPos+i+1];
+    history[StartPos+i] = history[StartPos+i+1];//max to remove compiler nag
+    //history[StartPos+i] = history[299];//max to remove compiler nag
   }
   
   history[EndPos] = Freq; //Fill in the new value at the end of each array
@@ -158,5 +211,37 @@ void WaterfallUp(int StartPos, int EndPos, byte Freq, byte ColourSelector)
       case 9: strip.setPixelColor(StartPos+i, Wheel(history[StartPos+i])); break;
     }
   }
+}
+
+void Strobe(int StartPos, int EndPos, byte Freq, byte ColourSelector)
+{
+  int totalLength = EndPos - StartPos + 1;
+
+  if(strobeCurrent) 
+  {
+    for (int i=0; i<totalLength; i++)
+    {
+      switch (ColourSelector) {
+        case 0: strip.setPixelColor(StartPos+i, rWheel(Freq)); break;//red
+        case 1: strip.setPixelColor(StartPos+i, bWheel(Freq)); break;//blue
+        case 2: strip.setPixelColor(StartPos+i, gWheel(Freq)); break;//green
+        case 3: strip.setPixelColor(StartPos+i, bWheel(Freq)); break;//blue
+        case 4: strip.setPixelColor(StartPos+i, rWheel(Freq)); break;//red
+        case 5: strip.setPixelColor(StartPos+i, gWheel(Freq)); break;//green
+        case 6: strip.setPixelColor(StartPos+i, pWheel(Freq)); break;//purple
+        case 7: strip.setPixelColor(StartPos+i, yWheel(Freq)); break;//yellow
+        case 8: strip.setPixelColor(StartPos+i, cWheel(Freq)); break;//Cyan
+        case 9: strip.setPixelColor(StartPos+i, wWheel(Freq)); break;//white
+      }
+    } 
+  }
+  else
+  {
+    for (int i=0; i<totalLength; i++)
+    {
+      strip.setPixelColor(StartPos+i, rWheel(0));//turn off lights
+    }
+  }
+  strobeCurrent = !strobeCurrent;//switch strobe
 }
 
