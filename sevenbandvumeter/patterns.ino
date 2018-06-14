@@ -242,6 +242,11 @@ void Strobe(int StartPos, int EndPos, byte Freq, byte ColourSelector)
       strip.setPixelColor(StartPos+i, rWheel(0));//turn off lights
     }
   }
-  strobeCurrent = !strobeCurrent;//switch strobe
+  strobeCounter++;
+  if(strobeCounter == 2)
+  {
+    strobeCounter = 0;
+    strobeCurrent = !strobeCurrent;//switch strobe
+  }
 }
 

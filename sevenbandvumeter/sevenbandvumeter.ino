@@ -42,6 +42,7 @@ bool strobe = 0;
 bool bloompulse = 0;
 
 bool strobeCurrent = 0;
+byte strobeCounter = 0;
 
 bool directionUp = false;
 byte randomFreq;
@@ -60,17 +61,18 @@ void setup()
   //Initialize Light Strip
   strip.begin();
   SetBrightness();
+  strip.setBrightness(255);
   strip.show(); 
   
   randomSeed(analogRead(5)); //seed the random function
   changeColour(); //start with a random colour
 
-  radio.begin();
+  /*radio.begin();
   radio.openWritingPipe(address);
   radio.setPALevel(RF24_PA_MIN);
   radio.stopListening();
 
-  delay(500);
+  delay(500);*/
 }
 
 void loop()//bloompulse not used anywhere yet!
@@ -82,12 +84,12 @@ void loop()//bloompulse not used anywhere yet!
   Serial.println("3");*/
   
   //set brightness
-  SetBrightness();
+  //SetBrightness();
   
   getAudioInput(); // get the audio from the MSGEQ7
   checkForPassive(); //checks for no audio 
 
-  /*
+/*
   //strobe Build up
   strobeBuildupCounter++;
   int halfLength = stripLength / 2;
@@ -97,8 +99,15 @@ void loop()//bloompulse not used anywhere yet!
   //Strobe Buildup end
   */
   
-
-  if(passiveMode){
+  //changePatternStrobe(); 
+  
+  WaterfallUp(0  , 49 , (pitch1 + pitch2 + pitch3) / 3, 9);
+  VUUp(50 , 79 , (pitch2 + pitch3 + pitch4) / 3, peak1, 9);
+  BlockPulse(80 , 105, (pitch3 + pitch4 + pitch5) / 3, 9);
+  BloomPulse(106, 130, (pitch5 + pitch6 + pitch7) / 3, 9);
+  
+  
+  /*if(passiveMode){
     displayPassive();
   } else {
     beatDetection(); // changes pattern
@@ -226,7 +235,7 @@ void loop()//bloompulse not used anywhere yet!
         case 7: BloomPulse(0, stripLength, pitch7, colourWheel); break;
       }
     } else {changePattern();}
-  }
+  }*/
 
   strip.show();
   delay(20);
@@ -268,13 +277,13 @@ void getAudioInput()
     int tempFreq = max((FreqVal[i]-BottomVolTrim),0);
     byte tempTrim = map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255);
     
-    /*Serial.print(tempFreq);//Transimit the DC value of the seven bands
+    Serial.print(tempFreq);//Transimit the DC value of the seven bands
     Serial.print("->");
     Serial.print(map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255));//Transimit the DC value of the seven bands
     if(i<6) Serial.print(", ");
     else {
       Serial.println();
-    }*/
+    }
      switch (i) {
       case 0: pitch1 = tempTrim; break;
       case 1: pitch2 = tempTrim; break;
