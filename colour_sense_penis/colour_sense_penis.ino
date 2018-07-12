@@ -11,6 +11,8 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(50, PIN, NEO_RGB + NEO_KHZ800);
 //Adafruit_TCS34725 tcs = Adafruit_TCS34725();
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 
+byte strokeCount = 0;
+
 void setup() {
   Serial.begin(9600);
 
@@ -60,7 +62,7 @@ void loop() {
 
   int red, green, blue;
   
-  if(r > 100 || g > 100 || b > 100)
+  if(r > 200 || g > 200 || b > 200)
   {
     /*Serial.print("Color Temp: "); Serial.print(colorTemp, DEC); Serial.print(" K - ");
     Serial.print("Lux: "); Serial.print(lux, DEC); Serial.print(" - ");
@@ -78,7 +80,17 @@ void loop() {
     blue  = map(b, 100, highest, 0, 255);
 
     //colorWipe(Color(red, green, blue), 20);
-    throbCock(Color(red, green, blue));
+    //throbCock(Color(red, green, blue));
+    strokeCount++;
+    if(strokeCount > random(2,7))
+    {
+        strokeCount = 0;
+        throbCock(randomColor());
+    }
+    else
+    {
+      colorWipeShaft(randomColor());
+    }
   }
   else
   {
@@ -120,7 +132,7 @@ void throbCock(uint32_t ThrobColor) {
   int counter = 0;
   digitalWrite(4, LOW);
   
-  for (byte throbWait = random(10, 20); throbWait > 1; throbWait--)//warmup Pump
+  for (byte throbWait = random(5, 10); throbWait > 1; throbWait--)//warmup Pump
   {
     Serial.println(throbWait);
     for (int j = 0; j < 256; j++)//bright
@@ -146,7 +158,7 @@ void throbCock(uint32_t ThrobColor) {
     }
   }
 
-  for (byte throbWait = random(10, 20); throbWait > 1; throbWait--)//quick Pump
+  for (byte throbWait = random(5, 10); throbWait > 1; throbWait--)//quick Pump
   {
     Serial.println(throbWait);
     for (int j = 0; j < 256; j++)//bright
@@ -263,8 +275,20 @@ void colorWipe(uint32_t c, uint8_t wait) {
   }
 }
 
+void colorWipeShaft(uint32_t c) {
+  for (uint16_t i = 0; i < 45; i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(20);
+  }
+  delay(500);
+  colorWipe(Color(0,0,0),20);
+  delay(500);
+}
+
 uint32_t randomColor() {
-  return Color(random(255),random(255),random(255));
+  //return Color(random(255),random(255),random(255));
+  return Wheel(random(0,255));
 }
 
 void setColor(uint32_t color)
