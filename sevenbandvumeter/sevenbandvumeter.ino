@@ -19,7 +19,6 @@ Analyzer Audio = Analyzer(4,5,0);//Strobe pin ->4  RST pin ->5 Analog Pin ->0
 int BottomVolTrim = 100;
 byte quietcounter = 0;
 
-RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
 
 int FreqVal[7];//
@@ -40,6 +39,8 @@ bool VU = 0;
 bool pulse = 0;
 bool strobe = 0;
 bool bloompulse = 0;
+bool twinkle = 0;
+bool twinklePaint = 0;
 
 bool strobeCurrent = 0;
 byte strobeCounter = 0;
@@ -60,8 +61,8 @@ void setup()
 
   //Initialize Light Strip
   strip.begin();
-  SetBrightness();
-  strip.setBrightness(255);
+  //SetBrightness();
+  strip.setBrightness(128);
   strip.show(); 
   
   randomSeed(analogRead(5)); //seed the random function
@@ -77,41 +78,25 @@ void setup()
 
 void loop()//bloompulse not used anywhere yet!
 {
-  /*Serial.println("1");
-  char text[] = "Hello";
-  Serial.println("2");
-  radio.write(&text, sizeof(text));
-  Serial.println("3");*/
-  
   //set brightness
-  //SetBrightness();
+  SetBrightness();
   
   getAudioInput(); // get the audio from the MSGEQ7
   checkForPassive(); //checks for no audio 
-
-/*
-  //strobe Build up
-  strobeBuildupCounter++;
-  int halfLength = stripLength / 2;
-  if(strobeBuildupCounter == halfLength) { strobeBuildupCounter = 0; }
-  int allFreqAve = (pitch1 + pitch2 + pitch3 + pitch4 + pitch5 + pitch6 + pitch7) / 7;
-  Strobe(halfLength - strobeBuildupCounter, halfLength + strobeBuildupCounter, allFreqAve, colourWheel);
-  //Strobe Buildup end
-  */
   
   //changePatternStrobe(); 
   
-  WaterfallUp(0  , 49 , (pitch1 + pitch2 + pitch3) / 3, 9);
+  /*WaterfallUp(0  , 49 , (pitch1 + pitch2 + pitch3) / 3, 9);
   VUUp(50 , 79 , (pitch2 + pitch3 + pitch4) / 3, peak1, 9);
   BlockPulse(80 , 105, (pitch3 + pitch4 + pitch5) / 3, 9);
-  BloomPulse(106, 130, (pitch5 + pitch6 + pitch7) / 3, 9);
+  BloomPulse(106, 130, (pitch5 + pitch6 + pitch7) / 3, 9);*/
   
   
-  /*if(passiveMode){
+  if(passiveMode){
     displayPassive();
   } else {
     beatDetection(); // changes pattern
-
+    
     //pick pattern based on bools
     if(waterfall == 1){
       if(true == directionUp) {
@@ -234,8 +219,24 @@ void loop()//bloompulse not used anywhere yet!
         case 6: BloomPulse(0, stripLength, pitch6, colourWheel); break;
         case 7: BloomPulse(0, stripLength, pitch7, colourWheel); break;
       }
-    } else {changePattern();}
-  }*/
+    } else if (twinkle == 1) {//just twinkle that shit all bands all at once
+      Twinkle(0  , 43 , pitch1, colourWheel);
+      Twinkle(44 , 86 , pitch2, colourWheel);
+      Twinkle(87 , 129, pitch3, colourWheel);
+      Twinkle(130, 171, pitch4, colourWheel);
+      Twinkle(172, 214, pitch5, colourWheel);
+      Twinkle(215, 257, pitch6, colourWheel);
+      Twinkle(258, 299, pitch7, colourWheel);
+    } else if (twinklePaint == 1) {
+      TwinklePaint(0  , 43 , pitch1, colourWheel);
+      TwinklePaint(44 , 86 , pitch2, colourWheel);
+      TwinklePaint(87 , 129, pitch3, colourWheel);
+      TwinklePaint(130, 171, pitch4, colourWheel);
+      TwinklePaint(172, 214, pitch5, colourWheel);
+      TwinklePaint(215, 257, pitch6, colourWheel);
+      TwinklePaint(258, 299, pitch7, colourWheel);
+    } else { changePattern(); }
+  }
 
   strip.show();
   delay(20);
@@ -324,22 +325,28 @@ void changeColour()
   colourWheel = random(0, 10);//change colour between 0 - 9
 }
 
-void changePatternVU()        { waterfall=0; pulse=0; VU=1; strobe=0; bloompulse=0; } //nah, nah, yea, nah, nah
-void changePatternPulse()     { waterfall=0; pulse=1; VU=0; strobe=0; bloompulse=0; } //nah, yea, nah, nah, nah
-void changePatternWaterfall() { waterfall=1; pulse=0; VU=0; strobe=0; bloompulse=0; } //yea, nah, nah, nah, nah
-void changePatternStrobe()    { waterfall=0; pulse=0; VU=0; strobe=1; bloompulse=0; } //nah, nah, nah, yea, nah
-void changePatternBloomPulse(){ waterfall=0; pulse=0; VU=0; strobe=0; bloompulse=1; } //nah, nah, nah, nah, yea
+void clearPattern()               { waterfall=0; pulse=0; VU=0; strobe=0; bloompulse=0; twinkle=0; twinklePaint=0; }
+
+void changePatternVU()            { clearPattern(); VU=1; } 
+void changePatternPulse()         { clearPattern(); pulse=1; } 
+void changePatternWaterfall()     { clearPattern(); waterfall=1; } 
+void changePatternStrobe()        { clearPattern(); strobe=1; } 
+void changePatternBloomPulse()    { clearPattern(); bloompulse=1; } 
+void changePatternTwinkle()       { clearPattern(); twinkle=1; }
+void changePatternTwinklePaint()  { clearPattern(); twinklePaint=1; }
 
 void changePattern()
 {  
   //if all bools are false, randomly pick one
-  if(waterfall + VU + pulse + strobe + bloompulse != 1) {//if none, or more then one, is picked
-    switch(random(0, 5)){
+  if(waterfall + VU + pulse + strobe + bloompulse + twinkle + twinklePaint != 1) {//if none, or more then one, is picked
+    switch(random(0, 7)){
       case 0: changePatternWaterfall(); break;
       case 1: changePatternVU(); break;
       case 2: changePatternPulse(); break; 
       case 3: changePatternStrobe(); break;
-      default: changePatternBloomPulse(); break; //also case 4
+      case 4: changePatternBloomPulse(); break;
+      case 5: changePatternTwinkle(); break;
+      default: changePatternTwinklePaint(); break; //also case 6
     }
   }
   else if(waterfall) //if we are already on waterfall
@@ -355,43 +362,16 @@ void changePattern()
       changeColour(); 
     }
   }
-  else if(VU) //if we are already on VU
+  else //if if we are on anything other then waterfall
   {
-    switch(random(0, 4)) {
-      case 0: changePatternWaterfall(); break;
-      case 1: changePatternPulse(); break;
-      case 2: changePatternBloomPulse(); break;
-      default: changePatternStrobe(); break;
-    }
-    changeColour();
-  }
-  else if(pulse) //if we are already on pulse
-  {
-    switch(random(0, 4)) {
+    switch(random(0, 7)){
       case 0: changePatternWaterfall(); break;
       case 1: changePatternVU(); break;
-      case 2: changePatternBloomPulse(); break;
-      default: changePatternStrobe(); break;
-    }
-    changeColour();
-  }
-  else if(strobe) //if we are already on strobe
-  {
-    switch(random(0, 4)) {
-      case 0: changePatternWaterfall(); break;
-      case 1: changePatternVU(); break;
-      case 2: changePatternBloomPulse(); break;
-      default: changePatternPulse(); break;
-    }
-    changeColour();
-  }
-  else if(bloompulse)
-  {
-    switch(random(0, 4)) {
-      case 0: changePatternWaterfall(); break;
-      case 1: changePatternVU(); break;
-      case 2: changePatternStrobe(); break;
-      default: changePatternPulse(); break;
+      case 2: changePatternPulse(); break; 
+      case 3: changePatternStrobe(); break;
+      case 4: changePatternBloomPulse(); break;
+      case 5: changePatternTwinkle(); break;
+      default: changePatternTwinklePaint(); break; //also case 6
     }
     changeColour();
   }
