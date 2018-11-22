@@ -20,7 +20,7 @@ void displayGhost()
   uint32_t orange = Color(255, 128, 0);
   uint32_t pink = Color(128, 64, 175);*/
   
-  strip.setBrightness(255);
+  //strip.setBrightness(255);
 
   for(int8_t i=-64; i<64; i = i+16)
   {
