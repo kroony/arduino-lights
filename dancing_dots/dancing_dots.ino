@@ -1,8 +1,8 @@
 //RGB LED Library
 #include <Adafruit_NeoPixel.h>
-
+int StripLength = 300;
 //Library Setup
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(StripLength, 6, NEO_GRB + NEO_KHZ800);
 
 int outputCount = 0;
 
@@ -79,8 +79,8 @@ class DotObject
       velocity = random(1, 31)/10.0;
       Serial.print(", Velocity ");
       Serial.println(velocity);
-      location = random(0, 2) * 300; //start at either end
-      if (location == 300) {
+      location = random(0, 2) * StripLength; //start at either end
+      if (location == StripLength) {
         color256 = 1;
       } else {
         color256 = 170;
@@ -99,7 +99,7 @@ class DotObject
 
     void checkForLost() {
       if(active) {
-        if(location < -3 || location > 303){
+        if(location < -3 || location > StripLength + 3){
           explode();
         }
       }
@@ -110,7 +110,7 @@ class DotObject
       explosionLocation = round(location);
       explosionTimer = 10;
       velocity = 0; // stop moving dot
-      location = 350; // move dot far away enough that more explosions dont make weirdness on the ends
+      location = StripLength + 50; // move dot far away enough that more explosions dont make weirdness on the ends
       active = false;
 
       //single frame explosion + and - 10 pixel from the last location
@@ -144,7 +144,7 @@ class DotObject
         location = location + velocity;
 
         //change direction of dot when it gets to the end of the strip
-        if ((location > 300 && velocity > 0) || (location < 0 && velocity < 0)) {
+        if ((location > StripLength && velocity > 0) || (location < 0 && velocity < 0)) {
           velocity = velocity * -1;
         }
 
@@ -195,12 +195,6 @@ class DotObject
       }
     }
 };
-
-
-
-
-
-
 
 
 //initiate dots
