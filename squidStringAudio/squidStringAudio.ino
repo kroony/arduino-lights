@@ -6,8 +6,9 @@ const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
 
 const int stripLength = 200; //length of led strip
+int stripLengthSeventh = stripLength / 7;
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_RGB + NEO_KHZ800);
 
 Analyzer Audio = Analyzer(4,5,0);//Strobe pin ->4  RST pin ->5 Analog Pin ->0
 //Analyzer Audio = Analyzer();//Strobe->4 RST->5 Analog->5
@@ -120,8 +121,7 @@ void loop()//bloompulse not used anywhere yet!
         WaterfallUp  (24, 31, pitch4, colourWheel);
         WaterfallDown(32, 39, pitch3, colourWheel);
         WaterfallUp  (40, 47, pitch2, colourWheel);
-        WaterfallDown(48, 55, (pitch2 + pitch1) / 2, colourWheel);
-        WaterfallUp  (56 ,63, pitch1, colourWheel);
+        WaterfallUp  (56 ,200, pitch1, colourWheel);
       } else {
         WaterfallUp  (0 , 7 , pitch7, colourWheel);
         WaterfallDown(8 , 15, pitch6, colourWheel);
@@ -129,51 +129,28 @@ void loop()//bloompulse not used anywhere yet!
         WaterfallDown(24, 31, pitch4, colourWheel);
         WaterfallUp  (32, 39, pitch3, colourWheel);
         WaterfallDown(40, 47, pitch2, colourWheel);
-        WaterfallUp  (48, 55, (pitch2 + pitch1) / 2, colourWheel);
         WaterfallDown(56 ,63, pitch1, colourWheel);
       }
     } else if (pulse == 1) {
-      switch(randomFreq){
-        case 1: 
-          BlockPulse(0, stripLength - 1, (pitch1 + pitch2 + pitch3 + pitch4 + pitch5 + pitch6 + pitch7) / 7, colourWheel); //overall total volume single block pulse. simple as it gets
-          break;
-        case 2:
-          BlockPulse(0 , 31, (pitch4 + pitch5 + pitch6 + pitch7) / 4, colourWheel);
-          BlockPulse(32, 63, (pitch1 + pitch2 + pitch3 + pitch4) / 4, colourWheel);
-          break;
-        case 3:
-          BlockPulse(0 , 23, (pitch1 + pitch2 + pitch3 + pitch4) / 4, colourWheel);
-          BlockPulse(24, 39, (pitch4 + pitch5 + pitch6 + pitch7) / 4, min(colourWheel+1,9));
-          BlockPulse(40, 63, (pitch1 + pitch2 + pitch3 + pitch4) / 4, colourWheel);
-          break;
-        case 4:
-          BlockPulse(0 , 7 , (pitch6 + pitch7) / 2, colourWheel);
-          BlockPulse(8 , 23, (pitch5 + pitch6) / 2, min(colourWheel+1,9));
-          BlockPulse(24, 39, (pitch3 + pitch4 + pitch5) / 3, min(colourWheel+2,9));
-          BlockPulse(40, 55, (pitch2 + pitch3) / 2, min(colourWheel+1,9));
-          BlockPulse(56, 63, (pitch1 + pitch2) / 2, colourWheel);
-          break;
-        default: 
-          BlockPulse(0 , 7 , pitch7, colourWheel);
-          BlockPulse(8 , 15, pitch6, colourWheel);
-          BlockPulse(16, 23, pitch5, colourWheel);
-          BlockPulse(24, 39, pitch4, colourWheel);//take the middle 2 rows
-          BlockPulse(40, 47, pitch3, colourWheel);
-          BlockPulse(48, 55, pitch2, colourWheel);
-          BlockPulse(56, 63, pitch1, colourWheel);
-          break;
-      }
+      BlockPulse(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      BlockPulse(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      BlockPulse(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      BlockPulse(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      BlockPulse(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      BlockPulse(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      BlockPulse(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
     } else if (VU == 1) {
-      VUDown(0 , 7 , pitch7, peak7, colourWheel);
-      VUUp  (8 , 15, pitch6, peak6, colourWheel);
-      VUDown(16, 23, pitch5, peak5, colourWheel);
-      VUUp  (24, 31, pitch4, peak4, colourWheel);
-      VUDown(32, 39, (pitch4 + pitch3) / 2, peak8, colourWheel);
-      VUUp  (40, 47, pitch3, peak3, colourWheel);
-      VUDown(48, 55, pitch2, peak2, colourWheel);
-      VUUp  (56, 63, pitch1, peak1, colourWheel);
+      
+      VUDown(0                     , stripLengthSeventh  , pitch7, peak7, colourWheel);
+      VUUp  (stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, peak6, colourWheel);
+      VUDown(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, peak5, colourWheel);
+      VUUp  (stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, peak4, colourWheel);
+      VUUp  (stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, peak3, colourWheel);
+      VUDown(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, peak2, colourWheel);
+      VUUp  (stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, peak1, colourWheel);
     } else if (strobe == 1) { //just fuckin' strobe the whole thing, dont get fancy
-      switch(randomFreq){
+      changePattern();
+      /*switch(randomFreq){
         case 1: Strobe(0, stripLength, pitch1, colourWheel); break;
         case 2: Strobe(0, stripLength, pitch2, colourWheel); break;
         case 3: Strobe(0, stripLength, pitch3, colourWheel); break;
@@ -181,25 +158,25 @@ void loop()//bloompulse not used anywhere yet!
         case 5: Strobe(0, stripLength, pitch5, colourWheel); break;
         case 6: Strobe(0, stripLength, pitch6, colourWheel); break;
         case 7: Strobe(0, stripLength, pitch7, colourWheel); break;
-      }
+      }*/
     } else if (bloompulse == 1) { //bloom pulse does not work well on this few leds
       changePattern();
     } else if (twinkle == 1) {//just twinkle that shit all bands all at once
-      Twinkle(0 , 7 , pitch7, colourWheel);
-      Twinkle(8 , 15, pitch6, colourWheel);
-      Twinkle(16, 23, pitch5, colourWheel);
-      Twinkle(24, 39, pitch4, colourWheel);//take the middle 2 rows
-      Twinkle(40, 47, pitch3, colourWheel);
-      Twinkle(48, 55, pitch2, colourWheel);
-      Twinkle(56, 63, pitch1, colourWheel);
+      Twinkle(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      Twinkle(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      Twinkle(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      Twinkle(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      Twinkle(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      Twinkle(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      Twinkle(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
     } else if (twinklePaint == 1) {
-      TwinklePaint(0 , 7 , pitch7, colourWheel);
-      TwinklePaint(8 , 15, pitch6, colourWheel);
-      TwinklePaint(16, 23, pitch5, colourWheel);
-      TwinklePaint(24, 39, pitch4, colourWheel);
-      TwinklePaint(40, 47, pitch3, colourWheel);
-      TwinklePaint(48, 55, pitch2, colourWheel);
-      TwinklePaint(56, 63, pitch1, colourWheel);
+      TwinklePaint(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      TwinklePaint(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      TwinklePaint(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      TwinklePaint(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      TwinklePaint(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      TwinklePaint(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      TwinklePaint(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
     } else { changePattern(); }
   }
 

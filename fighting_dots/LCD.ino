@@ -24,13 +24,13 @@ byte shield[8] = {
 //start animations
 void initaliseLCD(){
   // initialize the LCD
-  lcd.init();
-  lcd.begin(16, 2);
+  //lcd.init();
+  //lcd.begin(16, 2);
   delay(100);
-  lcd.clear();
-  lcd.backlight();
+  //lcd.clear();
+  //lcd.backlight();
 
-  lcd.createChar(0, bell);
+  /*lcd.createChar(0, bell);
   lcd.createChar(1, emptyHeart);
   lcd.createChar(2, cross);
   lcd.createChar(3, flag);
@@ -39,28 +39,28 @@ void initaliseLCD(){
   lcd.createChar(6, crosshair);
   lcd.createChar(7, bullet);
   lcd.createChar(8, shield);
-  lcd.home();
+  lcd.home();*/
 }
 
 void typeText(String line1, String line2)
 {
-  lcd.home();
-  lcd.clear();
-  lcd.blink();
+  //lcd.home();
+  //lcd.clear();
+  //lcd.blink();
   for(byte i=0; i<line1.length(); i++)
   {
-    lcd.print(line1.charAt(i));
+    //lcd.print(line1.charAt(i));
     delay(250);
   }
   
-  lcd.setCursor(0, 1);
+  //lcd.setCursor(0, 1);
   for(byte i=0; i<line2.length(); i++)
   {
-    lcd.print(line2.charAt(i));
+    //lcd.print(line2.charAt(i));
     delay(250);
   }
 
-  lcd.noBlink();
+  //lcd.noBlink();
 }
 
 void updateLCD(){
@@ -76,24 +76,24 @@ void updateLCD(){
 void writeScores()
 {
   //clear screen
-  lcd.clear();
-  lcd.home();
+  //lcd.clear();
+  //lcd.home();
 
-  lcd.write(5);
-  lcd.print("Red ");
-  if(scoreRed < 10) {lcd.print(space);}
-  lcd.print(String(scoreRed));
+  //lcd.write(5);
+  //lcd.print("Red ");
+  //if(scoreRed < 10) {lcd.print(space);}
+  //lcd.print(String(scoreRed));
   
-  lcd.print("/");
-  if(scoreBlue < 10) {lcd.print(space);}
-  lcd.print(String(scoreBlue) + " Blue");
-  lcd.write(5);
-  lcd.setCursor(0, 1);
+  //lcd.print("/");
+  //if(scoreBlue < 10) {lcd.print(space);}
+  //lcd.print(String(scoreBlue) + " Blue");
+  //lcd.write(5);
+  //lcd.setCursor(0, 1);
 
   printDotInfo(dotsRed[0]);
   printDotInfo(dotsRed[1]);
 
-  lcd.print(" / ");
+  //lcd.print(" / ");
 
   printDotInfo(dotsBlue[0]);
   printDotInfo(dotsBlue[1]);
@@ -101,18 +101,18 @@ void writeScores()
 
 void writeWinner(bool teamRed)
 {
-  lcd.clear();
-  lcd.home();
+  //lcd.clear();
+  //lcd.home();
 
   if(teamRed)
   {
-    lcd.print("Congratulations!");
-    lcd.setCursor(0, 1);
-    lcd.print(" Red Team Wins!");
+    //lcd.print("Congratulations!");
+    //lcd.setCursor(0, 1);
+    //lcd.print(" Red Team Wins!");
   } else {
-    lcd.print("Congratulations!");
-    lcd.setCursor(0, 1);
-    lcd.print(" Blue Team Wins");
+    //lcd.print("Congratulations!");
+    //lcd.setCursor(0, 1);
+    //lcd.print(" Blue Team Wins");
   }
 }
 
@@ -121,14 +121,14 @@ void printDotInfo(DotObject dot)
   if(dot.active)
   {
     if(dot.attack){ 
-      lcd.print(space); lcd.write(6); lcd.print(space);
+      //lcd.print(space); lcd.write(6); lcd.print(space);
     } else{ 
-      lcd.print(space); lcd.write(8); lcd.print(space);
+      //lcd.print(space); lcd.write(8); lcd.print(space);
     }
   }
   else
   {
-    lcd.print(" - ");
+    //lcd.print(" - ");
   }
 }
 
