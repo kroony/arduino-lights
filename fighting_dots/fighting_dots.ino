@@ -2,13 +2,13 @@
 #include <Adafruit_NeoPixel.h>
 
 //Library Setup
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, 6, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(200, 6, NEO_GRB + NEO_KHZ800);
 
 //Includes for 16x2 LCD
 #include <Wire.h> 
-#include <LiquidCrystal_I2C.h>
+//#include <LiquidCrystal_I2C.h>
 // Set the LCD address to 0x3f for a 16 chars and 2 line display
-LiquidCrystal_I2C lcd(0x3f, 16, 2);
+//LiquidCrystal_I2C lcd(0x3f, 16, 2);
 
 void displayDigit(int number);
 void writeScores();

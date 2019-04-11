@@ -3,14 +3,14 @@
 
 //RF
 #include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
+//#include <nRF24L01.h>
+//#include <RF24.h>
 
 //PIN Definition
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
 
-const int stripLength = 300; //length of led strip
+const int stripLength = 200; //length of led strip
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_GRB + NEO_KHZ800);
 

@@ -1,11 +1,11 @@
-#include <AudioAnalyzer.h>
+//#include <AudioAnalyzer.h>
 #include <Adafruit_NeoPixel.h>
 
 //PIN Definition
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
 
-const int stripLength = 200; //length of led strip
+const int stripLength = 700; //length of led strip
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_RGB + NEO_KHZ800);
 
@@ -44,6 +44,8 @@ class DotObject
      *  3 - Pulse dot
      *  4 - Fading pulse dot forwards
      *  5 - Fading pulse dot backwards
+     *  6 - flash
+     *  7 - blinker
      */
 
     static uint32_t Color(byte r_, byte g_, byte b_)
@@ -68,29 +70,38 @@ class DotObject
 
     uint32_t getRandomColour()
     {
-       byte colourpicker = random(0,6);
+       byte colourpicker = random(0,7);
     
         switch (colourpicker) {
-          case 0: 
-            return Color(255, 0  , 0  ); break; //red
-          case 1: 
-            return Color(0  , 255, 0  ); break; //green
-          case 2: 
-            return Color(0  , 0  , 255); break; //blue
-          case 3: 
-            return Color(255, 255, 0  ); break; //yellow
-          case 4: 
-            return Color(255, 0  , 255); break; //purple
-          case 5: 
-            return Color(0  , 255, 255); break; //orange
-          case 6: 
-            return Color(255, 255, 255); break; //white
+          case 0: return Color(255, 0  , 0  ); break; //red
+          case 1: return Color(0  , 255, 0  ); break; //green
+          case 2: return Color(0  , 0  , 255); break; //blue
+          case 3: return Color(255, 255, 0  ); break; //yellow
+          case 4: return Color(255, 0  , 255); break; //purple
+          case 5: return Color(0  , 255, 255); break; //orange
+          case 6: return Color(255, 255, 255); break; //white
         }
     }
 
     void initaliseStationary()
     {
       type = 1;
+      age = 1;
+      location = random(0, stripLength);
+      dotColour = getRandomColour();
+    }
+
+    void initaliseFlash()
+    {
+      type = 6;
+      age = 1;
+      location = random(0, stripLength);
+      dotColour = getRandomColour();
+    }
+
+    void initaliseBlinker()
+    {
+      type = 7;
       age = 1;
       location = random(0, stripLength);
       dotColour = getRandomColour();
@@ -119,7 +130,25 @@ class DotObject
     {
       if(type == 1 || type == 2) //Stationary Dot
       {
+        strip.setPixelColor(location-9, brightness(dotColour,(age/10)*1));
+        strip.setPixelColor(location-8, brightness(dotColour,(age/10)*2));
+        strip.setPixelColor(location-7, brightness(dotColour,(age/10)*3));
+        strip.setPixelColor(location-6, brightness(dotColour,(age/10)*4));
+        strip.setPixelColor(location-5, brightness(dotColour,(age/10)*5));
+        strip.setPixelColor(location-4, brightness(dotColour,(age/10)*6));
+        strip.setPixelColor(location-3, brightness(dotColour,(age/10)*7));
+        strip.setPixelColor(location-2, brightness(dotColour,(age/10)*8));
+        strip.setPixelColor(location-1, brightness(dotColour,(age/10)*9));
         strip.setPixelColor(location, brightness(dotColour,age));
+        strip.setPixelColor(location+1, brightness(dotColour,(age/10)*9));
+        strip.setPixelColor(location+2, brightness(dotColour,(age/10)*8));
+        strip.setPixelColor(location+3, brightness(dotColour,(age/10)*7));
+        strip.setPixelColor(location+4, brightness(dotColour,(age/10)*6));
+        strip.setPixelColor(location-5, brightness(dotColour,(age/10)*5));
+        strip.setPixelColor(location-6, brightness(dotColour,(age/10)*4));
+        strip.setPixelColor(location-7, brightness(dotColour,(age/10)*3));
+        strip.setPixelColor(location-8, brightness(dotColour,(age/10)*2));
+        strip.setPixelColor(location-9, brightness(dotColour,(age/10)*1));
 
         if       (type == 1) {
           age++;
@@ -127,16 +156,6 @@ class DotObject
           
         } else if(type == 2) { 
           age--; 
-          if(age<250) { strip.setPixelColor(location-1, brightness(dotColour,age));
-                        strip.setPixelColor(location+1, brightness(dotColour,age)); }
-          if(age<200) { strip.setPixelColor(location-2, brightness(dotColour,age));
-                        strip.setPixelColor(location+2, brightness(dotColour,age)); }
-          if(age<150) { strip.setPixelColor(location-3, brightness(dotColour,age));
-                        strip.setPixelColor(location+3, brightness(dotColour,age)); }
-          if(age<100) { strip.setPixelColor(location-4, brightness(dotColour,age));
-                        strip.setPixelColor(location+4, brightness(dotColour,age)); }
-          if(age<50 ) { strip.setPixelColor(location-5, brightness(dotColour,age));
-                        strip.setPixelColor(location+5, brightness(dotColour,age)); }
           if(age==0)  { type = 0;}
         }
       } 
@@ -165,6 +184,38 @@ class DotObject
         location--;
         if(location == 0 || age == 0) { type = 0; }
       }
+      else if(type == 6) //flash
+      {
+        strip.setPixelColor(location, dotColour);
+        age++;
+        if(age == 2) { type = 0; }
+      }
+
+      else if(type == 7) //flash
+      {
+        age++;
+
+        switch (age) {
+          case 0   ... 20 : strip.setPixelColor(location, dotColour);
+          case 21  ... 40 : break;
+          case 41  ... 60 : strip.setPixelColor(location, dotColour);
+          case 61  ... 80 : break;
+          case 81  ... 100: strip.setPixelColor(location, dotColour);
+          case 101 ... 120: break;
+          case 121 ... 125: strip.setPixelColor(location, dotColour);
+          case 126 ... 130: break;
+          case 131 ... 135: strip.setPixelColor(location, dotColour);
+          case 136 ... 140: break;
+          case 141 ... 145: strip.setPixelColor(location, dotColour);
+          case 146 ... 150: break;
+          case 151 ... 155: strip.setPixelColor(location, dotColour);
+          case 156 ... 160: break;
+          case 161 ... 165: strip.setPixelColor(location, dotColour);
+          case 166 ... 170: break;
+        }
+        
+        if(age == 171) { type = 0; }
+      }
     }
 };
 
@@ -183,19 +234,19 @@ void setup()
   randomSeed(analogRead(5)); //seed the random function
 
   //Run LED test
-  /*
+  
   colorWipe(strip.Color(255, 0, 0)); // Red
   delay(1000);
-  colorWipe(strip.Color(0, 0, 0)); // Off
+  //colorWipe(strip.Color(0, 0, 0)); // Off
   
   colorWipe(strip.Color(0, 255, 0)); // Green
   delay(1000);
-  colorWipe(strip.Color(0, 0, 0)); // Off
+  //colorWipe(strip.Color(0, 0, 0)); // Off
   
   colorWipe(strip.Color(0, 0, 255)); // Blue
   delay(1000);
   colorWipe(strip.Color(0, 0, 0)); // Off
-  */
+  
   
   /*colorWipe(strip.Color(255, 255, 255)); // White
   delay(1000);
@@ -247,6 +298,32 @@ void loop()//bloompulse not used anywhere yet!
         dotArray[x].initalisePulse();
 
         //Serial.println("Create Pulse Dot");
+        //debugOutput();
+        x = 20;
+      }
+    }
+  }
+
+  //random create a new flash dot
+  if(random(0, 50) == 1) {
+    for(byte x = 0; x < 20; x++) {
+      if(dotArray[x].type == 0) {
+        dotArray[x].initaliseFlash();
+
+        //Serial.println("Create Flash Dot");
+        //debugOutput();
+        x = 20;
+      }
+    }
+  }
+
+  //random create a new Blinker dot
+  if(random(0, 250) == 1) {
+    for(byte x = 0; x < 20; x++) {
+      if(dotArray[x].type == 0) {
+        dotArray[x].initaliseBlinker();
+
+        //Serial.println("Create Blinker Dot");
         //debugOutput();
         x = 20;
       }

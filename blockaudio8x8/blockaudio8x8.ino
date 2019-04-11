@@ -5,7 +5,7 @@
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
 
-const int stripLength = 64; //length of led strip
+const int stripLength = 200; //length of led strip
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_GRB + NEO_KHZ800);
 

@@ -3,23 +3,26 @@
 
 //PIN Definition
 const byte LightDataPin = 6;
+const byte BrightnessPotPin = 2;
 
 const int stripLength = 200; //length of led strip
+int stripLengthSeventh = stripLength / 7;
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_RGB + NEO_KHZ800);
 
 Analyzer Audio = Analyzer(4,5,0);//Strobe pin ->4  RST pin ->5 Analog Pin ->0
 //Analyzer Audio = Analyzer();//Strobe->4 RST->5 Analog->5
 int BottomVolTrim = 100;
 byte quietcounter = 0;
 
-bool debug = false; //change to true when serial debugging
+bool debug = true;
 
 int FreqVal[7];//
 byte pitch1, pitch2, pitch3, pitch4, pitch5, pitch6, pitch7 = 0; 
-byte peak1, peak2, peak3, peak4, peak5, peak6, peak7 = 0;
+byte peak1, peak2, peak3, peak4, peak5, peak6, peak7, peak8 = 0;
 byte bassPeak = 0;
 byte history[stripLength];
+byte LightBrightness = 0;//light brightness 0 - 255, read from POT on analogue 2
 
 byte peakColour = 0; // universal colour for all VU peaks
 byte colourWheel = 0;
@@ -54,14 +57,15 @@ void setup()
 
   //Initialize Light Strip
   strip.begin();
-  strip.setBrightness(255);
+  //SetBrightness();
+  strip.setBrightness(128);
   strip.show(); 
   
   randomSeed(analogRead(5)); //seed the random function
   changeColour(); //start with a random colour
 
   //Run LED test
-  colorWipe(strip.Color(255, 0, 0)); // Red
+  /*colorWipe(strip.Color(255, 0, 0)); // Red
   delay(1000);
   colorWipe(strip.Color(0, 0, 0)); // Off
   
@@ -71,92 +75,120 @@ void setup()
   
   colorWipe(strip.Color(0, 0, 255)); // Blue
   delay(1000);
-  colorWipe(strip.Color(0, 0, 0)); // Off
+  colorWipe(strip.Color(0, 0, 0)); // Off*/
   
-  colorWipe(strip.Color(255, 255, 255)); // White
+  /*colorWipe(strip.Color(255, 255, 255)); // White
   delay(1000);
-  colorWipe(strip.Color(0, 0, 0)); // Off
+  colorWipe(strip.Color(0, 0, 0)); // Off*/
 
+  displayGhost();
+
+  //initalise all randoms
   randomStart();
+  changePatternVU();
 }
 
 void loop()//bloompulse not used anywhere yet!
-{ 
+{
+  //set brightness
+  SetBrightness();
+  
   getAudioInput(); // get the audio from the MSGEQ7
   checkForPassive(); //checks for no audio 
-
-  //Trunk 0 - 49
-  //Big Arm 50 - 79
-  //Small Arm 80 - 105
-  //Top 106 - 130
-
   
 
+  
+  //changePatternVU();
+  //changePatternPulse();
+  //changePatternWaterfall();
   //changePatternStrobe();
+  //changePatternBloomPulse();
+  //changePatternTwinkle();
+  //changePatternTwinklePaint();
+  
   
   if(passiveMode){
     displayPassive();
   } else {
     beatDetection(); // changes pattern
-
+    
     //pick pattern based on bools
     if(waterfall == 1){
       if(directionUp) {
-        WaterfallDown(0  , 49 , (pitch2 + pitch3) / 2, colourWheel);
-        WaterfallUp(50 , 79 , (pitch3 + pitch4) / 2, colourWheel);
-        WaterfallUp(80 , 105, (pitch4 + pitch5) / 2, colourWheel);
-        WaterfallUp(106, 129, (pitch5 + pitch6) / 2, colourWheel);
+        WaterfallDown(0 , 7 , pitch7, colourWheel);
+        WaterfallUp  (8 , 15, pitch6, colourWheel);
+        WaterfallDown(16, 23, pitch5, colourWheel);
+        WaterfallUp  (24, 31, pitch4, colourWheel);
+        WaterfallDown(32, 39, pitch3, colourWheel);
+        WaterfallUp  (40, 47, pitch2, colourWheel);
+        WaterfallUp  (56 ,200, pitch1, colourWheel);
       } else {
-        WaterfallUp(0  , 49 , (pitch2 + pitch3) / 2, colourWheel);
-        WaterfallDown(50 , 79 , (pitch3 + pitch4) / 2, colourWheel);
-        WaterfallDown(80 , 105, (pitch4 + pitch5) / 2, colourWheel);
-        WaterfallDown(106, 129, (pitch5 + pitch6) / 2, colourWheel);
+        WaterfallUp  (0 , 7 , pitch7, colourWheel);
+        WaterfallDown(8 , 15, pitch6, colourWheel);
+        WaterfallUp  (16, 23, pitch5, colourWheel);
+        WaterfallDown(24, 31, pitch4, colourWheel);
+        WaterfallUp  (32, 39, pitch3, colourWheel);
+        WaterfallDown(40, 47, pitch2, colourWheel);
+        WaterfallDown(56 ,63, pitch1, colourWheel);
       }
     } else if (pulse == 1) {
-      BlockPulse(0  , 49 , 255 - ((pitch2 + pitch3) / 2), colourWheel); //invert the trunk
-      BlockPulse(50 , 79 , (pitch3 + pitch4) / 2, colourWheel);
-      BlockPulse(80 , 105, (pitch4 + pitch5) / 2, colourWheel);
-      BlockPulse(106, 129, (pitch5 + pitch6) / 2, colourWheel);
-    }
-    else if (VU == 1) {
-      peak1 = VUUp(0  , 49 , (pitch2 + pitch3) / 2, peak1, colourWheel);
-      peak2 = VUDown(50 , 79 , (pitch3 + pitch4) / 2, peak2, colourWheel);
-      peak3 = VUDown(80 , 105, (pitch4 + pitch5) / 2, peak3, colourWheel);
-      peak4 = VUDown(106, 129, (pitch5 + pitch6) / 2, peak4, colourWheel);
-    } 
-    else if (strobe == 1) { //just fuckin' strobe the whole thing, dont get fancy
-      BloomPulseDown(0  , 49 , (pitch2 + pitch3) / 2, colourWheel);
-      BloomPulseUp(50 , 79 , (pitch3 + pitch4) / 2, colourWheel);
-      BloomPulseUp(80 , 105, (pitch4 + pitch5) / 2, colourWheel);
-      BloomPulseUp(106, 129, (pitch5 + pitch6) / 2, colourWheel);
-    }
-    else if (bloompulse == 1) { //just bloom pulse, but, chill bro
-      switch(randomFreq){
-        case 1: BloomPulse(0, stripLength, pitch1, colourWheel); break;
-        case 2: BloomPulse(0, stripLength, pitch2, colourWheel); break;
-        case 3: BloomPulse(0, stripLength, pitch3, colourWheel); break;
-        case 4: BloomPulse(0, stripLength, pitch4, colourWheel); break;
-        case 5: BloomPulse(0, stripLength, pitch5, colourWheel); break;
-        case 6: BloomPulse(0, stripLength, pitch6, colourWheel); break;
-        case 7: BloomPulse(0, stripLength, pitch7, colourWheel); break;
-      }
-    } else if (twinkle == 1) {//just twinkle that shit
-      Twinkle(  0,  49, (pitch7 + pitch6 + pitch5 + pitch4) / 4, colourWheel);
-      Twinkle( 50,  79, (pitch6 + pitch5 + pitch4 + pitch3) / 4, colourWheel);
-      Twinkle( 80, 105, (pitch5 + pitch4 + pitch3 + pitch2) / 4, colourWheel);
-      Twinkle(106, 129, (pitch4 + pitch3 + pitch2 + pitch1) / 4, colourWheel);
+      BlockPulse(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      BlockPulse(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      BlockPulse(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      BlockPulse(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      BlockPulse(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      BlockPulse(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      BlockPulse(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
+    } else if (VU == 1) {
+      
+      VUDown(0                     , stripLengthSeventh  , pitch7, peak7, colourWheel);
+      VUUp  (stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, peak6, colourWheel);
+      VUDown(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, peak5, colourWheel);
+      VUUp  (stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, peak4, colourWheel);
+      VUUp  (stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, peak3, colourWheel);
+      VUDown(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, peak2, colourWheel);
+      VUUp  (stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, peak1, colourWheel);
+    } else if (strobe == 1) { //just fuckin' strobe the whole thing, dont get fancy
+      changePattern();
+      /*switch(randomFreq){
+        case 1: Strobe(0, stripLength, pitch1, colourWheel); break;
+        case 2: Strobe(0, stripLength, pitch2, colourWheel); break;
+        case 3: Strobe(0, stripLength, pitch3, colourWheel); break;
+        case 4: Strobe(0, stripLength, pitch4, colourWheel); break;
+        case 5: Strobe(0, stripLength, pitch5, colourWheel); break;
+        case 6: Strobe(0, stripLength, pitch6, colourWheel); break;
+        case 7: Strobe(0, stripLength, pitch7, colourWheel); break;
+      }*/
+    } else if (bloompulse == 1) { //bloom pulse does not work well on this few leds
+      changePattern();
+    } else if (twinkle == 1) {//just twinkle that shit all bands all at once
+      Twinkle(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      Twinkle(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      Twinkle(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      Twinkle(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      Twinkle(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      Twinkle(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      Twinkle(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
     } else if (twinklePaint == 1) {
-      TwinklePaint(  0,  49, (pitch7 + pitch6 + pitch5 + pitch4) / 4, colourWheel);
-      TwinklePaint( 50,  79, (pitch6 + pitch5 + pitch4 + pitch3) / 4, colourWheel);
-      TwinklePaint( 80, 105, (pitch5 + pitch4 + pitch3 + pitch2) / 4, colourWheel);
-      TwinklePaint(106, 129, (pitch4 + pitch3 + pitch2 + pitch1) / 4, colourWheel);
-    }
-    else {changePattern();}
+      TwinklePaint(0                     , stripLengthSeventh  , pitch7, colourWheel);
+      TwinklePaint(stripLengthSeventh+1  , stripLengthSeventh*2, pitch6, colourWheel);
+      TwinklePaint(stripLengthSeventh*2+1, stripLengthSeventh*3, pitch5, colourWheel);
+      TwinklePaint(stripLengthSeventh*3+1, stripLengthSeventh*4, pitch4, colourWheel);
+      TwinklePaint(stripLengthSeventh*4+1, stripLengthSeventh*5, pitch3, colourWheel);
+      TwinklePaint(stripLengthSeventh*5+1, stripLengthSeventh*6, pitch2, colourWheel);
+      TwinklePaint(stripLengthSeventh*6+1, stripLengthSeventh*7, pitch1, colourWheel);
+    } else { changePattern(); }
   }
 
   strip.show();
   delay(20);
   ClearStrip();
+}
+
+void SetBrightness()
+{
+  LightBrightness = map(analogRead(BrightnessPotPin), 0, 1023, 0, 255);
+  strip.setBrightness(LightBrightness);
 }
 
 void ClearStrip(){
@@ -188,8 +220,7 @@ void getAudioInput()
     int tempFreq = max((FreqVal[i]-BottomVolTrim),0);
     byte tempTrim = map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255);
 
-    if(debug)
-    {
+    /*if(debug) {
       Serial.print(tempFreq);//Transimit the DC value of the seven bands
       Serial.print("->");
       Serial.print(map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255));//Transimit the DC value of the seven bands
@@ -197,8 +228,7 @@ void getAudioInput()
       else {
         Serial.println();
       }
-    }
-    
+    }*/
     switch (i) {
       case 0: pitch1 = tempTrim; break;
       case 1: pitch2 = tempTrim; break;
@@ -207,7 +237,7 @@ void getAudioInput()
       case 4: pitch5 = tempTrim; break;
       case 5: pitch6 = tempTrim; break;
       case 6: pitch7 = tempTrim; break;
-    }
+     }
   }
 }
 
@@ -222,7 +252,7 @@ void checkForPassive()
 void beatDetection()
 {
   bassPeak--;
-  byte currentBassAverage = pitch2; //bass beat detection off 160Hz range
+  byte currentBassAverage = (pitch1 + pitch2) / 2; //bass beat detection off 160Hz range
   if(bassPeak < currentBassAverage)
   {
     bassPeak = min(currentBassAverage + 10, 255);
@@ -241,10 +271,9 @@ void changeColour()
 
 void randomStart()
 {
-  //clearPattern();
-  changePatternTwinkle();
+  clearPattern();
   changeColour();
-  //changePattern();
+  changePattern();
 }
 
 void clearPattern()               { waterfall=0; pulse=0; VU=0; strobe=0; bloompulse=0; twinkle=0; twinklePaint=0; }
@@ -258,7 +287,8 @@ void changePatternTwinkle()       { clearPattern(); twinkle=1; }
 void changePatternTwinklePaint()  { clearPattern(); twinklePaint=1; }
 
 void changePattern()
-{  
+{
+  displayGhost();  
   //if all bools are false, randomly pick one
   if(waterfall + VU + pulse + strobe + bloompulse + twinkle + twinklePaint != 1) {//if none, or more then one, is picked
     switch(random(0, 7)){
@@ -303,8 +333,7 @@ void changePattern()
 
 void debugOutput()
 {
-  if(debug)
-  {
+  if(debug){
     Serial.println("-----");
     if(VU)        { Serial.print("VU"); }
     if(pulse)     { Serial.print("Pulse"); }

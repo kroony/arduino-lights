@@ -1,12 +1,12 @@
 #include <avr/pgmspace.h>
-#include <LedControl.h>
+//#include <LedControl.h>
 
-LedControl lc=LedControl(12,11,10,1);
+//LedControl lc=LedControl(12,11,10,1);
 
 void digitDisplaySetup(){
-  lc.shutdown(0,false);       //The MAX72XX is in power-saving mode on startup
-  lc.setIntensity(0,8);       // Set the brightness to default value
-  lc.clearDisplay(0);         // and clear the display
+  //lc.shutdown(0,false);       //The MAX72XX is in power-saving mode on startup
+  //lc.setIntensity(0,8);       // Set the brightness to default value
+  //lc.clearDisplay(0);         // and clear the display
 }
 
 const byte fills [] PROGMEM = {
@@ -135,7 +135,7 @@ void updateDigitDisplay()
     byte row = pgm_read_byte_near(fills + (digitDisplay + i) % MAX_FILLS);
     // add padding on left
     row = row >> 2;
-    lc.setRow(0,i, row);
+    //lc.setRow(0,i, row);
   }
 }
 

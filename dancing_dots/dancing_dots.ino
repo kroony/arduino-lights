@@ -1,6 +1,6 @@
 //RGB LED Library
 #include <Adafruit_NeoPixel.h>
-int StripLength = 300;
+int StripLength = 200;
 //Library Setup
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(StripLength, 6, NEO_GRB + NEO_KHZ800);
 
@@ -294,7 +294,7 @@ void loop()
   strip.show();
   
   //delay ms
-  delay(35);
+  delay(50);
 
   //output debug
   outputCount++;
