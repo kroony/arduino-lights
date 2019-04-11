@@ -173,7 +173,8 @@ void loop()//bloompulse not used anywhere yet!
       VUDown(48, 55, pitch2, peak2, colourWheel);
       VUUp  (56, 63, pitch1, peak1, colourWheel);
     } else if (strobe == 1) { //just fuckin' strobe the whole thing, dont get fancy
-      switch(randomFreq){
+      changePattern();//people dont like strobe
+      /*switch(randomFreq){
         case 1: Strobe(0, stripLength, pitch1, colourWheel); break;
         case 2: Strobe(0, stripLength, pitch2, colourWheel); break;
         case 3: Strobe(0, stripLength, pitch3, colourWheel); break;
@@ -181,7 +182,7 @@ void loop()//bloompulse not used anywhere yet!
         case 5: Strobe(0, stripLength, pitch5, colourWheel); break;
         case 6: Strobe(0, stripLength, pitch6, colourWheel); break;
         case 7: Strobe(0, stripLength, pitch7, colourWheel); break;
-      }
+      }*/
     } else if (bloompulse == 1) { //bloom pulse does not work well on this few leds
       changePattern();
     } else if (twinkle == 1) {//just twinkle that shit all bands all at once
