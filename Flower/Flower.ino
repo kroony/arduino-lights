@@ -1,7 +1,7 @@
 #include <Adafruit_NeoPixel.h>
 
 //Set Strip Constants
-const int length = 12;
+const int length = 5;
 const byte brightness = 255;
 
 byte nextcolor = 0;
