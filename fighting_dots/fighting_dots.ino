@@ -2,13 +2,13 @@
 #include <Adafruit_NeoPixel.h>
 
 //Library Setup
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(200, 6, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(350, 6, NEO_RGB + NEO_KHZ800);
 
 //Includes for 16x2 LCD
 #include <Wire.h> 
-//#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h>
 // Set the LCD address to 0x3f for a 16 chars and 2 line display
-//LiquidCrystal_I2C lcd(0x3f, 16, 2);
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
 void displayDigit(int number);
 void writeScores();
@@ -51,8 +51,8 @@ class DotObject
       byte r = (colour >> 16) & 255;
       return Color(r * bright, g * bright, b * bright);
     }
-    
-    void activate(bool teamRed_, bool attack_) {
+    void activate(bool teamRed_, bool attack_)
+    {
       active = true;
       attack = attack_;
       teamRed = teamRed_;
@@ -64,26 +64,24 @@ class DotObject
       location = teamRed ? 0 : 300;
       writeScores();
     }
+    void loop()
+    {
+      if (active) {// if the dot is active update it. otherwise do nothing
 
-    void loop() {
-      if (active) {
+        //move the dot based on its velocity
         location = location + velocity;
 
         int locationRounded = round(location);
         byte trailLength = abs(round(velocity)) + 3;
         int trailDirection = velocity > 0 ? -1 : 1;
         float trailBright = 1 / (float)trailLength;
-        
-        uint32_t dotColor;
-        if (!attack) {
-          dotColor = Color(0, 255, 0);
-        } else if (teamRed) {
-          dotColor = Color(255, 0, 0);
-        } else {
-          dotColor = Color(0, 0, 255);
-        }
 
-        for (int i = 0; i < trailLength; ++i) {
+        uint32_t dotColor; //set the dot colour
+        if (!attack)      { dotColor = Color(  0, 255,   0); } //green for defence
+        else if (teamRed) { dotColor = Color(255,   0,   0); } //red for red attack
+        else              { dotColor = Color(  0,   0, 255); } //blue for blue attack
+
+        for (int i = 0; i < trailLength; ++i) { //set the fading brightness trail of the dot
           uint32_t trailColor = brightness(dotColor, 1 - (trailBright * i));
           int trailLocation = locationRounded + (i * trailDirection);
           strip.setPixelColor(trailLocation, trailColor);
@@ -91,32 +89,31 @@ class DotObject
         
         //change direction of dot when it gets to the end of the strip
         if (attack) {
-          if (location > 299 && !teamRed) {
-            velocity = -fabs(velocity);
-          } else if (location < 0 && teamRed) {
-            velocity = fabs(velocity);
-          } else if (location > 299 && teamRed) {
-            // increment score counter for red
+          if (location > strip.numPixels() - 1 && !teamRed) { //if a blue attack dot moves off the board on blue base side
+            velocity = -fabs(velocity); //bounce back
+          } else if (location < 0 && teamRed) { //if a red attack dot moves off the board on red base side
+            velocity = fabs(velocity); //bounce back
+          } else if (location > strip.numPixels() - 1 && teamRed) { //if a red dot makes it to blue base
+            // increment score counter for red and deactivate dot
             active = false;
             scoreBlue--;
             writeScores();
-            
-          } else if (location < 0 && !teamRed) {
-            // increment score counter for blue
+          } else if (location < 0 && !teamRed) { //if a blue dot makes it to the red base
+            // increment score counter for blue and deactivate dot
             active = false;
             scoreRed--;
             writeScores();
           }
-        } else {
-          if (location < 151 && !teamRed) {
+        } else { //bounce defence dot back at mid way point
+          if (location < strip.numPixels()/2+1 && !teamRed) { //if the blue defence dot location is over the half way from blue start
             velocity = fabs(velocity);
-          } else if (location > 149 && teamRed) {
+          } else if (location > strip.numPixels()/2-1 && teamRed) { //if the red defence dot location is over the half way from red start
             velocity = -fabs(velocity);
-          } else if (location > 299 && !teamRed) {
+          } else if (location > strip.numPixels()-1 && !teamRed) { //if blue defence moves off board on blue side
             // dead defense
             active = false;
             writeScores();
-          } else if (location < 0 && teamRed) {
+          } else if (location < 0 && teamRed) { //if red defence moves off board on red side
             // dead defense
             active = false;
             writeScores();
@@ -124,14 +121,29 @@ class DotObject
         }
       }
     }
-
-    void slowdown()
+    void slowdown() //if the dot velocity is more then 0.1, slow it by 10%
     {
       if (fabs(velocity) > 0.1) {
         velocity *= 0.9;
       }
     }
 };
+
+class Button
+{
+public:
+  const byte pin;
+  bool last;
+
+  Button(byte pin_); //Digital pin for pullup button
+  bool pressed(); //return true when state changes to pressed
+};
+
+//initiate buttons
+//Button buttonBlueDefend(1); 
+//Button buttonBlueAttack(2);
+Button buttonRedDefend(11);
+Button buttonRedAttack(12);
 
 //initiate dots
 DotObject dotsBlue[DOT_ARRAY_SIZE];
@@ -159,45 +171,51 @@ void loop()
 {
   strip.clear();
 
-  int inactiveBlue = dotIndexInactive(dotsBlue);
-  /*if (inactiveBlue != -1) {
-    if (buttonBlueDefend.pressed()) {
-      dotsBlue[inactiveBlue].activate(false, false);
-    }
-    if (buttonBlueAttack.pressed()) {
-      dotsBlue[inactiveBlue].activate(false, true);
-    }
-  }*/
-
-  int inactiveRed = dotIndexInactive(dotsRed);
-  /*if (inactiveRed != -1) {
-    if (buttonRedDefend.pressed()) {
-      dotsRed[inactiveRed].activate(true, false);
-    }
-    if (buttonRedAttack.pressed()) {
-      dotsRed[inactiveRed].activate(true, true);
-    }
-  }*/
-
   if(gameActive)
   {
+    //Button press detection
+    int inactiveBlue = dotIndexInactive(dotsBlue);
+    /*if (inactiveBlue != -1) {
+      if (buttonBlueDefend.pressed()) {
+        dotsBlue[inactiveBlue].activate(false, false);
+      }
+      if (buttonBlueAttack.pressed()) {
+        dotsBlue[inactiveBlue].activate(false, true);
+      }
+    }*/
+
+    //Serial.print(digitalRead(12));
+    //Serial.print(' ');
+    //Serial.println(digitalRead(11));
+  
+    int inactiveRed = dotIndexInactive(dotsRed);
+    if (inactiveRed != -1) {
+      if (buttonRedDefend.pressed()) {
+        dotsRed[inactiveRed].activate(true, false);
+      }
+      if (buttonRedAttack.pressed()) {
+        dotsRed[inactiveRed].activate(true, true);
+      }
+    }
+  
+    
     runDotsLoop();
     collisionDetection();
 
-    // display the board markers
+    // display the board markers - team colours at the ends and white in the middle
     strip.setPixelColor(0, DotObject::Color(255,0,0));
-    strip.setPixelColor(150, DotObject::Color(255,255,255));
-    strip.setPixelColor(299, DotObject::Color(0,0,255));
+    strip.setPixelColor(strip.numPixels() / 2, DotObject::Color(255,255,255));
+    strip.setPixelColor(strip.numPixels() - 1, DotObject::Color(0,0,255));
 
     checkForWin();
     
-    if (random(0,100) == 0 && inactiveBlue != -1) {//random create a blue dot
+    /*if (random(0,100) == 0 && inactiveBlue != -1) {//random create a blue dot
       dotsBlue[inactiveBlue].activate(false, random(0,2));
-    }
+    }*/
   
-    if (random(0,100) == 0 && inactiveRed != -1) {//random create a red dot
+    /*if (random(0,100) == 0 && inactiveRed != -1) {//random create a red dot
       dotsRed[inactiveRed].activate(true, random(0,2));
-    }
+    }*/
   
   }
   else
@@ -225,9 +243,9 @@ void winner(bool teamRed)
   
   uint32_t col = teamRed ? DotObject::Color(255,0,0) : DotObject::Color(0,0,255);
 
-  for (int i = 0; i != 150; ++i) {
+  for (int i = 0; i != strip.numPixels()/2; ++i) {
     strip.setPixelColor(i, DotObject::brightness(col, i / 150.0));
-    strip.setPixelColor(299 - i, DotObject::brightness(col, i / 150.0));
+    strip.setPixelColor(strip.numPixels() - i, DotObject::brightness(col, i / 150.0));
     strip.show();
     delay(50);
   }

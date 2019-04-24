@@ -1,26 +1,19 @@
-class Button
+
+Button::Button(byte pin_) : pin(pin_), last(true)
 {
-public:
-  const byte pin;
-  bool last;
+  pinMode(pin, INPUT_PULLUP);
+}
 
-  Button(byte pin_) : pin(pin_), last(false)
-  { }
-
-  bool pressed()
+bool Button::pressed()
+{
+  if (digitalRead(pin) == HIGH)
   {
-    if (digitalRead(pin) == HIGH)
-    {
-      if (last) return false;
-      last = true;
-      return true;
-    } else {
-      last = false;
-      return false;
-    }
+    if (last) return false;
+    last = true;
+    return true;
+  } else {
+    last = false;
+    return false;
   }
-};
+}
 
-
-Button buttonBlueDefend(1), buttonBlueAttack(2),
-       buttonRedDefend(3), buttonRedAttack(4);

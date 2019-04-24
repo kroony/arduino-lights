@@ -41,26 +41,26 @@ void collisionDetection()
         double loc2_o = red.location;
         double loc2_n = loc2_o + red.velocity;
 
-        if(testOverlap(min(loc1_o, loc1_n), max(loc1_o, loc1_n), min(loc2_o, loc2_n), max(loc2_o, loc2_n))){
-          if (blue.attack != red.attack) {
-            if (signbit(blue.velocity) == signbit(red.velocity)) {
+        if(testOverlap(min(loc1_o, loc1_n), max(loc1_o, loc1_n), min(loc2_o, loc2_n), max(loc2_o, loc2_n))){//do the dots move in or through the same space next tick?
+          if (blue.attack != red.attack) { //are the dots different? 
+            if (signbit(blue.velocity) == signbit(red.velocity)) { //if they are moving in the same direction
               if (blue.attack) {
-                blue.slowdown();
+                blue.slowdown(); //slowdown blue attack when it moves over a retreating red defence dot
               } else {
-                red.slowdown();
+                red.slowdown(); //slowdown red attack when it moves over a retreating blue defence dot
               }
-            } else {
-              if (blue.attack) {
+            } else { //the are moving towards each other
+              if (blue.attack) { //red defended successfully, destroy blue attack dot, turn red defence around and into an attack dot
                 blue.active = false;
                 red.attack = true;
                 red.velocity *= -1;
-              } else {
+              } else { //blue defended successfully, destroy red attack dot, turn blue defence around and into an attack dot
                 red.active = false;
                 blue.attack = true;
                 blue.velocity *= -1;
               }
             }
-          } else {
+          } else { //the dots are the same (attack + attack because defence cant interact past midpoint)
             red.slowdown();
             blue.slowdown();
           }
