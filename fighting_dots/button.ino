@@ -6,7 +6,7 @@ Button::Button(byte pin_) : pin(pin_), last(true)
 
 bool Button::pressed()
 {
-  if (digitalRead(pin) == HIGH)
+  if (digitalRead(pin) == LOW)
   {
     if (last) return false;
     last = true;
