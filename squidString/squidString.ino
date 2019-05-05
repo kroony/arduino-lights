@@ -3,19 +3,22 @@
 
 //PIN Definition
 const byte LightDataPin = 6;
+const byte PIRDataPin = 3;
 const byte BrightnessPotPin = 2;
 
-const int stripLength = 700; //length of led strip
+const int stripLength = 350; //length of led strip
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_RGB + NEO_KHZ800);
 
 bool debug = true;
 
-byte LightBrightness = 255;//light brightness 0 - 255, read from POT on analogue 2
+byte LightBrightness = 100;//light brightness 0 - 255, read from POT on analogue 2
 
 byte peakColour = 0; // universal colour for all VU peaks
 byte colourWheel = 0;
 bool changedColour = false;
+
+bool previousPirState = false;
 
 byte history[stripLength];
 
@@ -34,7 +37,7 @@ class DotObject
 {
   public:
     byte age = 1;
-    byte location;
+    uint16_t location;
     uint32_t dotColour;
     byte type = 0; 
     /*
@@ -107,11 +110,12 @@ class DotObject
       dotColour = getRandomColour();
     }
 
-    void initalisePulse()
+    void initalisePulse(uint16_t startLocation)
     {
+      Serial.println("initalise pulse");
       type = 3;
       age = 1;
-      location = 0;
+      location = startLocation;
       dotColour = getRandomColour();
     }
 
@@ -168,7 +172,7 @@ class DotObject
         strip.setPixelColor(location-4, brightness(dotColour,50));
 
         location++;
-        if(location == stripLength+5) { type = 0; }
+        if(location > stripLength+5) { type = 0; }
       }
       else if(type == 4) //fading forward
       {
@@ -225,6 +229,8 @@ void setup()
 {
   Serial.begin(57600);  //Init the baudrate
 
+  pinMode(PIRDataPin, INPUT); 
+  
   //Initialize Light Strip
   strip.begin();
   //SetBrightness();
@@ -235,17 +241,17 @@ void setup()
 
   //Run LED test
   
-  colorWipe(strip.Color(255, 0, 0)); // Red
-  delay(1000);
+  //colorWipe(strip.Color(255, 0, 0)); // Red
+  //delay(1000);
   //colorWipe(strip.Color(0, 0, 0)); // Off
   
-  colorWipe(strip.Color(0, 255, 0)); // Green
-  delay(1000);
+  //colorWipe(strip.Color(0, 255, 0)); // Green
+  //delay(1000);
   //colorWipe(strip.Color(0, 0, 0)); // Off
   
-  colorWipe(strip.Color(0, 0, 255)); // Blue
-  delay(1000);
-  colorWipe(strip.Color(0, 0, 0)); // Off
+  //colorWipe(strip.Color(0, 0, 255)); // Blue
+  //delay(1000);
+  //colorWipe(strip.Color(0, 0, 0)); // Off
   
   
   /*colorWipe(strip.Color(255, 255, 255)); // White
@@ -254,19 +260,23 @@ void setup()
 
 }
 
-void loop()//bloompulse not used anywhere yet!
+void loop()
 {
   //set brightness
   //SetBrightness();
-
+  
   //paint dots
+  byte countActive = 0;
   for(byte x = 0; x < 20; x++) {
-    if (dotArray[x].type != 0) dotArray[x].paint();
+    if (dotArray[x].type != 0) {
+      dotArray[x].paint();
+      countActive++;
+      Serial.print("Dot ");
+    }
   }
 
-
   //random create a new fading dot
-  if(random(0, 150) == 1) {
+  /*if(random(0, 150) == 1) {
     for(byte x = 0; x < 20; x++) {
       if(dotArray[x].type == 0) {
         dotArray[x].initaliseFading();
@@ -276,10 +286,10 @@ void loop()//bloompulse not used anywhere yet!
         x = 20;
       }
     }
-  }
+  }*/
   
   //random create a new stationary dot
-  if(random(0, 300) == 1) {
+  /*if(random(0, 300) == 1) {
     for(byte x = 0; x < 20; x++) {
       if(dotArray[x].type == 0) {
         dotArray[x].initaliseStationary();
@@ -289,16 +299,14 @@ void loop()//bloompulse not used anywhere yet!
         x = 20;
       }
     }
-  }
+  }*/
 
-  //random create a new pulse dot
-  if(random(0, 1000) == 1) {
+  //check sensor to create pulse
+  if(checkPIRSensor()) {
+    Serial.println("yea boi");
     for(byte x = 0; x < 20; x++) {
       if(dotArray[x].type == 0) {
-        dotArray[x].initalisePulse();
-
-        //Serial.println("Create Pulse Dot");
-        //debugOutput();
+        dotArray[x].initalisePulse(0);
         x = 20;
       }
     }
@@ -331,13 +339,28 @@ void loop()//bloompulse not used anywhere yet!
   }
   
   strip.show();
-  delay(GetDelayDuration());
+  //delay(GetDelayDuration());
+  delay(15);
   strip.clear();
 }
 
 byte GetDelayDuration()
 {
-  return map(analogRead(BrightnessPotPin), 0, 1023, 0, 255);
+  return analogRead(BrightnessPotPin)/ 4; //change the 1023 max analog read to the 255 brightness scale
+}
+
+bool checkPIRSensor()
+{
+  bool currentPirSensor = digitalRead(3);
+  Serial.println(digitalRead(3));
+  if(currentPirSensor != previousPirState && currentPirSensor == 1)
+  {
+    previousPirState = currentPirSensor;
+    return true;
+  }
+  
+  previousPirState = currentPirSensor;
+  return false;
 }
 
 void SetBrightness()
@@ -379,3 +402,11 @@ static uint32_t brightness(uint32_t colour, float bright)
   byte r_ = (colour >> 16) & 255;
   return Color(r_ * bright, g_ * bright, b_ * bright);
 }
+
+void setStrip(uint32_t c)
+{
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+  }
+}
+
