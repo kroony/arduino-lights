@@ -7,8 +7,12 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(350, 6, NEO_RGB + NEO_KHZ800);
 //Includes for 16x2 LCD
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
+
+const byte screenWidth = 16;
 // Set the LCD address to 0x3f for a 16 chars and 2 line display
-LiquidCrystal_I2C lcd(0x3F, 16, 2);
+//make a screen for red and blue team
+LiquidCrystal_I2C redLCD(0x3F, screenWidth, 2);
+LiquidCrystal_I2C blueLCD(0x3E, screenWidth, 2);
 
 void displayDigit(int number);
 void writeScores();
@@ -22,7 +26,45 @@ byte previousRedScore = totalScore;
 
 bool gameActive = false;
 
-const byte DOT_ARRAY_SIZE = 2;
+const byte DOT_ARRAY_SIZE = 3;
+
+const char space = ' ';
+const byte charDelay = 250;
+const uint16_t screenDelay = 1000;
+
+//Intro Strings
+//       SCREEN LIMIT       = "1234567890123456"
+const char intro1[17]       = "Fighting Dots";
+const char intro2[17]       = "A Line Game";
+
+const char intro3[17]       = "Made By Amos,";
+const char intro4[17]       = "Bill, & Matt";
+
+/*
+const char intro5red[17]    = "Red Button";
+const char intro6red[17]    = "Attacks";
+
+const char intro5blue[17]   = "Blue Button";
+const char intro6blue[17]   = "Attacks";
+
+const char intro7[17]       = "Green Button";
+const char intro8[17]       = "Defends";
+
+const char intro9red[17]    = "Hit Blue 20";
+const char intro10red[17]   = "times to win";
+
+const char intro9blue[17]   = "Hit Red 20";
+const char intro10blue[17]  = "times to win";
+*/
+
+const char intro11[17]      = "New Game In";
+const char intro12[17]      = "3...2...1...";
+
+const char win1[17]         = "Congratulations";
+const char win2[17]         = "You Won! W00t!";
+
+const char lose1[17]        = "Yea Nah Mate";
+const char lose2[17]        = "You Lost. Sorry";
 
 class DotObject
 {
@@ -33,100 +75,15 @@ class DotObject
     bool teamRed;
     bool attack;
     
-    static uint32_t Color(byte r, byte g, byte b)
-    {
-      uint32_t c;
-      c = r;
-      c <<= 8;
-      c |= g;
-      c <<= 8;
-      c |= b;
-      return c;
-    }
-    static uint32_t brightness(uint32_t colour, float bright)
-    {
-      bright *= bright;
-      byte b = colour & 255;
-      byte g = (colour >> 8) & 255;
-      byte r = (colour >> 16) & 255;
-      return Color(r * bright, g * bright, b * bright);
-    }
-    void activate(bool teamRed_, bool attack_)
-    {
-      active = true;
-      attack = attack_;
-      teamRed = teamRed_;
+    static uint32_t Color(byte r, byte g, byte b);// return 32bit int colour from RGB 0 - 255
 
-      velocity = random(1, 31)/10.0;
-      if (!teamRed) {
-        velocity *= -1;
-      }
-      location = teamRed ? 0 : 300;
-      writeScores();
-    }
-    void loop()
-    {
-      if (active) {// if the dot is active update it. otherwise do nothing
+    static uint32_t brightness(uint32_t colour, float bright);//return 32bit int colour at brightness 0 - 255
+    
+    void activate(bool teamRed_, bool attack_);//is the team red? //is it an attack dot
+    
+    void loop(); //update location and print to strip. 
 
-        //move the dot based on its velocity
-        location = location + velocity;
-
-        int locationRounded = round(location);
-        byte trailLength = abs(round(velocity)) + 3;
-        int trailDirection = velocity > 0 ? -1 : 1;
-        float trailBright = 1 / (float)trailLength;
-
-        uint32_t dotColor; //set the dot colour
-        if (!attack)      { dotColor = Color(  0, 255,   0); } //green for defence
-        else if (teamRed) { dotColor = Color(255,   0,   0); } //red for red attack
-        else              { dotColor = Color(  0,   0, 255); } //blue for blue attack
-
-        for (int i = 0; i < trailLength; ++i) { //set the fading brightness trail of the dot
-          uint32_t trailColor = brightness(dotColor, 1 - (trailBright * i));
-          int trailLocation = locationRounded + (i * trailDirection);
-          strip.setPixelColor(trailLocation, trailColor);
-        }
-        
-        //change direction of dot when it gets to the end of the strip
-        if (attack) {
-          if (location > strip.numPixels() - 1 && !teamRed) { //if a blue attack dot moves off the board on blue base side
-            velocity = -fabs(velocity); //bounce back
-          } else if (location < 0 && teamRed) { //if a red attack dot moves off the board on red base side
-            velocity = fabs(velocity); //bounce back
-          } else if (location > strip.numPixels() - 1 && teamRed) { //if a red dot makes it to blue base
-            // increment score counter for red and deactivate dot
-            active = false;
-            scoreBlue--;
-            writeScores();
-          } else if (location < 0 && !teamRed) { //if a blue dot makes it to the red base
-            // increment score counter for blue and deactivate dot
-            active = false;
-            scoreRed--;
-            writeScores();
-          }
-        } else { //bounce defence dot back at mid way point
-          if (location < strip.numPixels()/2+1 && !teamRed) { //if the blue defence dot location is over the half way from blue start
-            velocity = fabs(velocity);
-          } else if (location > strip.numPixels()/2-1 && teamRed) { //if the red defence dot location is over the half way from red start
-            velocity = -fabs(velocity);
-          } else if (location > strip.numPixels()-1 && !teamRed) { //if blue defence moves off board on blue side
-            // dead defense
-            active = false;
-            writeScores();
-          } else if (location < 0 && teamRed) { //if red defence moves off board on red side
-            // dead defense
-            active = false;
-            writeScores();
-          }
-        }
-      }
-    }
-    void slowdown() //if the dot velocity is more then 0.1, slow it by 10%
-    {
-      if (fabs(velocity) > 0.1) {
-        velocity *= 0.9;
-      }
-    }
+    void slowdown(); //if the dot velocity is more then 0.1, slow it by 10%
 };
 
 class Button
@@ -140,8 +97,8 @@ public:
 };
 
 //initiate buttons
-//Button buttonBlueDefend(1); 
-//Button buttonBlueAttack(2);
+Button buttonBlueDefend(9); 
+Button buttonBlueAttack(10);
 Button buttonRedDefend(11);
 Button buttonRedAttack(12);
 
@@ -159,10 +116,18 @@ void setup()
   
   //Initialize Strips
   strip.begin();
+
+  //display the board markers
+  strip.setPixelColor(0, DotObject::Color(255,0,0));
+  strip.setPixelColor(strip.numPixels() / 2, DotObject::Color(255,255,255));
+  strip.setPixelColor(strip.numPixels() - 1, DotObject::Color(0,0,255));
+    
   strip.show();
 
   // initialize the LCD
   initaliseLCD();
+
+  delay(1000);
 
   startNewGame();
 }
@@ -175,14 +140,14 @@ void loop()
   {
     //Button press detection
     int inactiveBlue = dotIndexInactive(dotsBlue);
-    /*if (inactiveBlue != -1) {
+    if (inactiveBlue != -1) {
       if (buttonBlueDefend.pressed()) {
         dotsBlue[inactiveBlue].activate(false, false);
       }
       if (buttonBlueAttack.pressed()) {
         dotsBlue[inactiveBlue].activate(false, true);
       }
-    }*/
+    }
 
     //Serial.print(digitalRead(12));
     //Serial.print(' ');
@@ -197,7 +162,6 @@ void loop()
         dotsRed[inactiveRed].activate(true, true);
       }
     }
-  
     
     runDotsLoop();
     collisionDetection();
@@ -208,15 +172,6 @@ void loop()
     strip.setPixelColor(strip.numPixels() - 1, DotObject::Color(0,0,255));
 
     checkForWin();
-    
-    /*if (random(0,100) == 0 && inactiveBlue != -1) {//random create a blue dot
-      dotsBlue[inactiveBlue].activate(false, random(0,2));
-    }*/
-  
-    /*if (random(0,100) == 0 && inactiveRed != -1) {//random create a red dot
-      dotsRed[inactiveRed].activate(true, random(0,2));
-    }*/
-  
   }
   else
   {
@@ -236,7 +191,7 @@ void checkForWin()
   if (scoreRed == 0) { winner(false); }
 }
 
-void winner(bool teamRed)
+void winner(bool teamRed) //is the winner red?
 {
   gameActive = false;
   writeWinner(teamRed);
@@ -260,12 +215,27 @@ void startNewGame()
     dotsRed[i].active = false;
     dotsBlue[i].active = false;
   }
-
-  typeText("Fighting Dots", "A Line Game");
-  delay(500);
-  typeText("Made By Amos", "& Bill");
-  delay(1000);
-  typeText("New Game In", "3...2...1...");
+  typeTextBoth(intro1, intro2);
+  delay(screenDelay);
+  
+  typeTextBoth(intro3, intro4);
+  delay(screenDelay);
+  
+  /*typeTextSeperate(intro5red, intro6red, intro5blue, intro6blue);
+  redLCD.print(space); delay(charDelay); redLCD.write(6); delay(charDelay);//crosshair
+  blueLCD.print(space); delay(charDelay); blueLCD.write(6); delay(charDelay);//crosshair
+  delay(screenDelay);
+  
+  typeTextBoth(intro7, intro8);
+  redLCD.print(space); delay(charDelay); redLCD.write(8); delay(charDelay);//sheild
+  blueLCD.print(space); delay(charDelay); blueLCD.write(8); delay(charDelay);//sheild
+  delay(screenDelay);*/
+  /*
+  typeTextSeperate(intro9red, intro10red, intro9blue, intro10blue);
+  delay(screenDelay);*/
+ 
+  typeTextBoth(intro11, intro12);
+  
   
   gameActive = true;
   writeScores();
