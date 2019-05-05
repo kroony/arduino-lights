@@ -8,8 +8,6 @@ uint8_t heart[8] = {0x0,0xa,0x1f,0x1f,0xe,0x4,0x0};
 uint8_t crosshair[8] = {0x00, 0x0E, 0x15, 0x1F, 0x15, 0x0E, 0x00, 0x00};
 //uint8_t bullet[8] = {0x0E, 0x1F, 0x1D, 0x1D, 0x1F, 0x1F, 0x0E, 0x1F};
 
-char space = ' ';
-
 byte shield[8] = {
   B00000,
   B01110,
@@ -23,47 +21,107 @@ byte shield[8] = {
 
 //start animations
 void initaliseLCD(){
-  // initialize the LCD
-  lcd.init();
-  lcd.begin(16, 2);
+  // initialize the LCDs
+  redLCD.init();
   delay(100);
-  lcd.clear();
-  lcd.backlight();
+  blueLCD.init();
+  delay(100);
+  redLCD.begin(16, 2);
+  delay(100);
+  blueLCD.begin(16, 2);
+  delay(100);
+  
+  redLCD.clear();
+  blueLCD.clear();
+  redLCD.backlight();
+  blueLCD.backlight();
 
   //lcd.createChar(0, bell);
   //lcd.createChar(1, emptyHeart);
   //lcd.createChar(2, cross);
   //lcd.createChar(3, flag);
   //lcd.createChar(4, clip);
-  lcd.createChar(5, heart);
-  lcd.createChar(6, crosshair);
+  redLCD.createChar(5, heart);
+  blueLCD.createChar(5, heart);
+  redLCD.createChar(6, crosshair);
+  blueLCD.createChar(6, crosshair);
   //lcd.createChar(7, bullet);
-  lcd.createChar(8, shield);
-  lcd.home();
+  redLCD.createChar(8, shield);
+  blueLCD.createChar(8, shield);
+  redLCD.home();
+  blueLCD.home();
 }
 
-void typeText(String line1, String line2)
+void typeTextBoth(char *line1, char *line2)
 {
-  lcd.home();
-  lcd.clear();
-  lcd.blink();
-  for(byte i=0; i<line1.length(); i++)
+  redLCD.home();
+  blueLCD.home();
+  redLCD.clear();
+  blueLCD.clear();
+  redLCD.blink();
+  blueLCD.blink();
+  for(byte i=0; i<screenWidth; i++)
   {
-    lcd.print(line1.charAt(i));
-    delay(250);
+    if(line1[i] != NULL) //if the character isnt null, print it on screen
+    { 
+      redLCD.print(line1[i]);
+      blueLCD.print(line1[i]);
+      delay(250);
+    }
   }
   
-  lcd.setCursor(0, 1);
+  redLCD.setCursor(0, 1);
+  blueLCD.setCursor(0, 1);
   delay(250);
-  for(byte i=0; i<line2.length(); i++)
+  for(byte i=0; i<screenWidth; i++)
   {
-    lcd.print(line2.charAt(i));
-    delay(250);
+    if(line2[i] != NULL) //if the character isnt null, print it on screen
+    {
+      redLCD.print(line2[i]);
+      blueLCD.print(line2[i]);
+      delay(250);
+    }
   }
 
-  lcd.noBlink();
+  redLCD.noBlink();
+  blueLCD.noBlink();
 }
+/*
+void typeTextSeperate(char *redLine1, char *redLine2, char *blueLine1, char *blueLine2)
+{
+  redLCD.home();
+  blueLCD.home();
+  redLCD.clear();
+  blueLCD.clear();
+  redLCD.blink();
+  blueLCD.blink();
+  for(byte i=0; i<screenWidth; i++)
+  {
+    if(redLine1[i] != NULL || blueLine1[i] != NULL)
+    {
+      if(redLine1[i] != NULL) { redLCD.print(redLine1[i]); }
+      if(blueLine1[i] != NULL) { blueLCD.print(blueLine1[i]); }
+      delay(250);
+    }
+  }
+  
+  redLCD.setCursor(0, 1);
+  blueLCD.setCursor(0, 1);
+  delay(250);
+  for(byte i=0; i<screenWidth; i++)
+  {
+    if(redLine2[i] != NULL || blueLine2[i] != NULL)
+    {
+      redLCD.print(redLine2[i]);
+      blueLCD.print(blueLine2[i]);
+      delay(250);
+    }
+  }
 
+  redLCD.noBlink();
+  blueLCD.noBlink();
+}
+*/
 void updateLCD(){
   //check if scores have changed
   if(scoreBlue != previousBlueScore || scoreRed != previousRedScore)
@@ -77,43 +135,68 @@ void updateLCD(){
 void writeScores()
 {
   //clear screen
-  lcd.clear();
-  lcd.home();
+  redLCD.clear();
+  blueLCD.clear();
+  redLCD.home();
+  blueLCD.home();
 
-  lcd.write(5);
-  lcd.print("Red ");
-  if(scoreRed < 10) {lcd.print(space);}
-  lcd.print(String(scoreRed));
+  //1st line
+  redLCD.write(5); //heart
+  blueLCD.write(5); //heart
+  redLCD.print("Red ");
+  blueLCD.print("Red ");
+  if(scoreRed < 10) {redLCD.print(space);}
+  if(scoreRed < 10) {blueLCD.print(space);}
+  redLCD.print(String(scoreRed));
+  blueLCD.print(String(scoreRed));
   
-  lcd.print("/");
-  if(scoreBlue < 10) {lcd.print(space);}
-  lcd.print(String(scoreBlue) + " Blue");
-  lcd.write(5);
-  lcd.setCursor(0, 1);
+  redLCD.print("/");
+  blueLCD.print("/");
+  if(scoreBlue < 10) {redLCD.print(space);}
+  if(scoreBlue < 10) {blueLCD.print(space);}
+  redLCD.print(String(scoreBlue) + " Blue");
+  blueLCD.print(String(scoreBlue) + " Blue");
+  redLCD.write(5); //heart
+  blueLCD.write(5); //heart
+
+  //2nd line
+  redLCD.setCursor(0, 1);
+  blueLCD.setCursor(0, 1);
 
   printDotInfo(dotsRed[0]);
   printDotInfo(dotsRed[1]);
+  printDotInfo(dotsRed[2]);
 
-  lcd.print(" / ");
+  redLCD.print(" /");
+  blueLCD.print(" /");
 
   printDotInfo(dotsBlue[0]);
   printDotInfo(dotsBlue[1]);
+  printDotInfo(dotsBlue[2]);
 }
 
 void writeWinner(bool teamRed)
 {
-  lcd.clear();
-  lcd.home();
+  redLCD.clear();
+  blueLCD.clear();
+  redLCD.home();
+  blueLCD.home();
 
   if(teamRed)
   {
-    lcd.print("Congratulations!");
-    lcd.setCursor(0, 1);
-    lcd.print(" Red Team Wins!");
+    redLCD.print(win1);
+    blueLCD.print(lose1);
+    redLCD.setCursor(0, 1);
+    blueLCD.setCursor(0, 1);
+    redLCD.print(win2);
+    blueLCD.print(lose2);
   } else {
-    lcd.print("Congratulations!");
-    lcd.setCursor(0, 1);
-    lcd.print(" Blue Team Wins");
+    redLCD.print(lose1);
+    blueLCD.print(win1);
+    redLCD.setCursor(0, 1);
+    blueLCD.setCursor(0, 1);
+    redLCD.print(lose2);
+    blueLCD.print(win2);
   }
 }
 
@@ -122,14 +205,17 @@ void printDotInfo(DotObject dot)
   if(dot.active)
   {
     if(dot.attack){ 
-      lcd.print(space); lcd.write(6); lcd.print(space);
+      redLCD.print(space); redLCD.write(6); //crosshair
+      blueLCD.print(space); blueLCD.write(6); //crosshair
     } else{ 
-      lcd.print(space); lcd.write(8); lcd.print(space);
+      redLCD.print(space); redLCD.write(8); //sheild
+      blueLCD.print(space); blueLCD.write(8); //sheild
     }
   }
   else
   {
-    lcd.print(" - ");
+    redLCD.print(" -");
+    blueLCD.print(" -");
   }
 }
 
