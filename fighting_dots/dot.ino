@@ -11,12 +11,17 @@ void DotObject::activate(bool teamRed_, bool attack_)
   active = true;
   attack = attack_;
   teamRed = teamRed_;
+  megaDot = false;
+  if(random(1,1000) < 5) {
+    megaDot = true;
+  }
+  megaDot
 
-  velocity = random(1, 31)/10.0;
+  velocity = random(5, 31)/10.0;
   if (!teamRed) {
     velocity *= -1;
   }
-  location = teamRed ? 0 : strip.numPixels();
+  location = teamRed ? 0 + scoreRed : strip.numPixels() - scoreBlue;//set the start location, offset by the scores
   writeScores();
 }
 
@@ -57,7 +62,7 @@ void DotObject::loop()
     else if (teamRed) { dotColor = Color(255,   0,   0); } //red for red attack
     else              { dotColor = Color(  0,   0, 255); } //blue for blue attack
 
-    for (int i = 0; i < trailLength; ++i) { //set the fading brightness trail of the dot
+    for (byte i = 0; i < trailLength; ++i) { //set the fading brightness trail of the dot
       uint32_t trailColor = brightness(dotColor, 1 - (trailBright * i));
       int trailLocation = locationRounded + (i * trailDirection);
       strip.setPixelColor(trailLocation, trailColor);
@@ -65,16 +70,16 @@ void DotObject::loop()
     
     //change direction of dot when it gets to the end of the strip
     if (attack) {
-      if (location > strip.numPixels() - 1 && !teamRed) { //if a blue attack dot moves off the board on blue base side
+      if (location > strip.numPixels() - (scoreBlue + 1) && !teamRed) { //if a blue attack dot moves off the board on blue base side
         velocity = -fabs(velocity); //bounce back
-      } else if (location < 0 && teamRed) { //if a red attack dot moves off the board on red base side
+      } else if (location < 0 + scoreRed && teamRed) { //if a red attack dot moves off the board on red base side
         velocity = fabs(velocity); //bounce back
-      } else if (location > strip.numPixels() - 1 && teamRed) { //if a red dot makes it to blue base
+      } else if (location > strip.numPixels() - (1 + scoreBlue) && teamRed) { //if a red dot makes it to blue base
         // increment score counter for red and deactivate dot
         active = false;
         scoreBlue--;
         writeScores();
-      } else if (location < 0 && !teamRed) { //if a blue dot makes it to the red base
+      } else if (location < 0 + scoreRed && !teamRed) { //if a blue dot makes it to the red base
         // increment score counter for blue and deactivate dot
         active = false;
         scoreRed--;
@@ -97,12 +102,27 @@ void DotObject::loop()
     }
   }
 }
-    
-int dotIndexInactive(DotObject* dots) {
+
+int dotIndexInactive(DotObject* dots) { //get index of inactive dot
   for (byte i = 0; i != DOT_ARRAY_SIZE; ++i) {
     if (!dots[i].active) return i;
   }
   return -1;
+}
+
+void setFieldPixels()
+{
+  for(byte i = 0; i < scoreRed; i++) //
+  {
+    strip.setPixelColor(i, DotObject::Color(255,0,0));
+  }
+  
+  strip.setPixelColor(strip.numPixels() / 2, DotObject::Color(255,255,255));
+
+  for(byte i = 0; i < scoreBlue; i++)
+  {
+    strip.setPixelColor(strip.numPixels() - i + 1, DotObject::Color(0,0,255));
+  }
 }
 
 byte dotsCountActive(DotObject* dots) {

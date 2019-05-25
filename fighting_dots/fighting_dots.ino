@@ -17,12 +17,12 @@ LiquidCrystal_I2C blueLCD(0x3E, screenWidth, 2);
 void displayDigit(int number);
 void writeScores();
 
-const byte totalScore = 20;
+const byte totalScore = 13;
 
 byte scoreBlue = totalScore;
 byte scoreRed = totalScore;
-byte previousBlueScore = totalScore;
-byte previousRedScore = totalScore;
+byte previousBlueScore = totalScore; //used to detect when to update screen
+byte previousRedScore = totalScore;  //used to detect when to update screen
 
 bool gameActive = false;
 
@@ -74,6 +74,7 @@ class DotObject
     double velocity;
     bool teamRed;
     bool attack;
+    bool megaDot;
     
     static uint32_t Color(byte r, byte g, byte b);// return 32bit int colour from RGB 0 - 255
 
@@ -118,9 +119,7 @@ void setup()
   strip.begin();
 
   //display the board markers
-  strip.setPixelColor(0, DotObject::Color(255,0,0));
-  strip.setPixelColor(strip.numPixels() / 2, DotObject::Color(255,255,255));
-  strip.setPixelColor(strip.numPixels() - 1, DotObject::Color(0,0,255));
+  setFieldPixels();
     
   strip.show();
 
@@ -138,38 +137,20 @@ void loop()
 
   if(gameActive)
   {
+    char rx_byte; //read from serial
+    if (Serial.available() > 0) {    // is a character available?
+      rx_byte = Serial.read();       // get the character
+    } // end: if (Serial.available() > 0)
+    
     //Button press detection
-    int inactiveBlue = dotIndexInactive(dotsBlue);
-    if (inactiveBlue != -1) {
-      if (buttonBlueDefend.pressed()) {
-        dotsBlue[inactiveBlue].activate(false, false);
-      }
-      if (buttonBlueAttack.pressed()) {
-        dotsBlue[inactiveBlue].activate(false, true);
-      }
-    }
-
-    //Serial.print(digitalRead(12));
-    //Serial.print(' ');
-    //Serial.println(digitalRead(11));
-  
-    int inactiveRed = dotIndexInactive(dotsRed);
-    if (inactiveRed != -1) {
-      if (buttonRedDefend.pressed()) {
-        dotsRed[inactiveRed].activate(true, false);
-      }
-      if (buttonRedAttack.pressed()) {
-        dotsRed[inactiveRed].activate(true, true);
-      }
-    }
+    buttonPressCheck();
     
     runDotsLoop();
+    
     collisionDetection();
 
     // display the board markers - team colours at the ends and white in the middle
-    strip.setPixelColor(0, DotObject::Color(255,0,0));
-    strip.setPixelColor(strip.numPixels() / 2, DotObject::Color(255,255,255));
-    strip.setPixelColor(strip.numPixels() - 1, DotObject::Color(0,0,255));
+    setFieldPixels();
 
     checkForWin();
   }
