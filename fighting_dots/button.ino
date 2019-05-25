@@ -31,10 +31,10 @@ void buttonPressCheck()
   
   int inactiveBlue = dotIndexInactive(dotsBlue); //get index of inactive blue dot
   if (inactiveBlue != -1) { //if there is actually an inactive dot, do stuff, otherwise skip anything further
-    if (buttonBlueDefend.pressed() || rx_byte == '1') {
+    if (buttonBlueDefend.pressed()) {
       dotsBlue[inactiveBlue].activate(false, false); //activate(bool teamRed_, bool attack_)
     }
-    if (buttonBlueAttack.pressed() || rx_byte == '2') {
+    if (buttonBlueAttack.pressed()) {
       dotsBlue[inactiveBlue].activate(false, true); //activate(bool teamRed_, bool attack_)
     }
   }

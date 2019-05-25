@@ -107,6 +107,8 @@ Button buttonRedAttack(12);
 DotObject dotsBlue[DOT_ARRAY_SIZE];
 DotObject dotsRed[DOT_ARRAY_SIZE];
 
+DotObject dotsIdle[10];
+
 void setup()
 {
   randomSeed(analogRead(0));
@@ -137,11 +139,6 @@ void loop()
 
   if(gameActive)
   {
-    char rx_byte; //read from serial
-    if (Serial.available() > 0) {    // is a character available?
-      rx_byte = Serial.read();       // get the character
-    } // end: if (Serial.available() > 0)
-    
     //Button press detection
     buttonPressCheck();
     

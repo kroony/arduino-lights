@@ -15,7 +15,6 @@ void DotObject::activate(bool teamRed_, bool attack_)
   if(random(1,1000) < 5) {
     megaDot = true;
   }
-  megaDot
 
   velocity = random(5, 31)/10.0;
   if (!teamRed) {
@@ -146,6 +145,11 @@ void runDotsLoop()
     dotsBlue[x].loop();
     dotsRed[x].loop();
   }
+}
+
+void runDotsDemoLoop()
+{
+
 }
 
 void collisionDetection()
