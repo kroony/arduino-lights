@@ -130,13 +130,15 @@ void displayPrice()
 
 void changeAnimation()
 {
-  paintSegment(0, Color(255,   0,   0)); strip.show(); delay(250); strip.clear(); //red
-  paintSegment(1, Color(255, 127,   0)); strip.show(); delay(250); strip.clear(); //orange
-  paintSegment(2, Color(255, 255,   0)); strip.show(); delay(250); strip.clear(); //yellow
-  paintSegment(3, Color(  0, 255,   0)); strip.show(); delay(250); strip.clear(); //green
-  paintSegment(4, Color(  0,   0, 255)); strip.show(); delay(250); strip.clear(); //blue
-  paintSegment(5, Color( 75,   0, 130)); strip.show(); delay(250); strip.clear(); //indigo
-  paintSegment(6, Color(148,   0, 211)); strip.show(); delay(250); strip.clear(); //Violet
+  rainbowDot();
+  paintSegment(Color(255,   0,   0), 0); strip.show(); delay(125); strip.clear(); //red
+  paintSegment(Color(255, 127,   0), 1); strip.show(); delay(125); strip.clear(); //orange
+  paintSegment(Color(255, 255,   0), 6); strip.show(); delay(125); strip.clear(); //yellow
+  paintSegment(Color(  0, 255,   0), 4); strip.show(); delay(125); strip.clear(); //green
+  paintSegment(Color(  0,   0, 255), 3); strip.show(); delay(125); strip.clear(); //blue
+  paintSegment(Color( 75,   0, 130), 2); strip.show(); delay(125); strip.clear(); //indigo
+  paintSegment(Color(148,   0, 211), 6); strip.show(); delay(125); strip.clear(); //Violet
+  paintSegment(Color(255, 255, 255), 5); strip.show(); delay(125); strip.clear(); //Violet
 }
 
 void paintSegment(uint32_t colour, byte segmentNumber) //where segments are 0 - 7
@@ -146,6 +148,17 @@ void paintSegment(uint32_t colour, byte segmentNumber) //where segments are 0 - 
   for(byte j = startPixel; j < startPixel + segmentLightLength; j++)//loop through lights in a segment and set their colour
   {
     strip.setPixelColor(j, colour);
+  }
+}
+
+void rainbowDot()
+{
+  for(byte i; i < strip.numPixels(); i++)//loop through lights in a segment and set their colour
+  {
+    strip.clear();
+    strip.setPixelColor(i, Wheel(i * 4));
+    strip.show();
+    delay(20);
   }
 }
 
