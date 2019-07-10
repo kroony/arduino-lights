@@ -2,7 +2,7 @@
 #include <Adafruit_NeoPixel.h>
 
 //RF
-#include <SPI.h>
+//#include <SPI.h>
 //#include <nRF24L01.h>
 //#include <RF24.h>
 
@@ -10,7 +10,7 @@
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
 
-const int stripLength = 200; //length of led strip
+const int stripLength = 300; //length of led strip
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLength, LightDataPin, NEO_GRB + NEO_KHZ800);
 
@@ -34,9 +34,9 @@ bool changedColour = false;
 
 int patternChangeCounter = 0;
 
-bool waterfall = 0;
-bool VU = 0;
-bool pulse = 0;
+bool waterfall = 0; //Broken
+bool VU = 0; //Broken
+bool pulse = 0; //Broken
 bool strobe = 0;
 bool bloompulse = 0;
 bool twinkle = 0;
@@ -48,7 +48,7 @@ byte strobeCounter = 0;
 bool directionUp = false;
 byte randomFreq;
 
-bool passiveMode = true;
+bool passiveMode = false;
 byte passiveGoalColour = 255;
 byte passiveColour = 0;
 int passiveSilenceCounter = 0;
@@ -67,22 +67,18 @@ void setup()
   
   randomSeed(analogRead(5)); //seed the random function
   changeColour(); //start with a random colour
-
-  /*radio.begin();
-  radio.openWritingPipe(address);
-  radio.setPALevel(RF24_PA_MIN);
-  radio.stopListening();
-
-  delay(500);*/
 }
 
 void loop()//bloompulse not used anywhere yet!
 {
+  if(random(0,5000) > 4975) {
+    changePattern();
+  }
   //set brightness
   SetBrightness();
   
   getAudioInput(); // get the audio from the MSGEQ7
-  checkForPassive(); //checks for no audio 
+  //checkForPassive(); //checks for no audio 
   
   //changePatternStrobe(); 
   
@@ -243,8 +239,7 @@ void loop()//bloompulse not used anywhere yet!
   ClearStrip();
 }
 
-void SetBrightness()
-{
+void SetBrightness() {
   LightBrightness = map(analogRead(BrightnessPotPin), 0, 1023, 0, 255);
   strip.setBrightness(LightBrightness);
 }
@@ -278,13 +273,13 @@ void getAudioInput()
     int tempFreq = max((FreqVal[i]-BottomVolTrim),0);
     byte tempTrim = map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255);
     
-    Serial.print(tempFreq);//Transimit the DC value of the seven bands
+    /*Serial.print(tempFreq);//Transimit the DC value of the seven bands
     Serial.print("->");
     Serial.print(map(tempFreq, 0, 1023 - BottomVolTrim, 0, 255));//Transimit the DC value of the seven bands
     if(i<6) Serial.print(", ");
     else {
       Serial.println();
-    }
+    }*/
      switch (i) {
       case 0: pitch1 = tempTrim; break;
       case 1: pitch2 = tempTrim; break;
@@ -314,7 +309,7 @@ void beatDetection()
     bassPeak = max(currentBassAverage + 10, 255);
     patternChangeCounter++; //count a beat
   }
-  if(patternChangeCounter > 16) {//try change the pattern every 16 beats
+  if(patternChangeCounter > 8) {//try change the pattern every 8 beats
     patternChangeCounter = 0;
     changePattern();
   }
@@ -330,7 +325,9 @@ void clearPattern()               { waterfall=0; pulse=0; VU=0; strobe=0; bloomp
 void changePatternVU()            { clearPattern(); VU=1; } 
 void changePatternPulse()         { clearPattern(); pulse=1; } 
 void changePatternWaterfall()     { clearPattern(); waterfall=1; } 
-void changePatternStrobe()        { clearPattern(); strobe=1; } 
+//void changePatternStrobe()        { clearPattern(); strobe=1; } // noone likes strobe so its gone
+void changePatternStrobe()        { changePattern(); } 
+
 void changePatternBloomPulse()    { clearPattern(); bloompulse=1; } 
 void changePatternTwinkle()       { clearPattern(); twinkle=1; }
 void changePatternTwinklePaint()  { clearPattern(); twinklePaint=1; }
@@ -382,10 +379,12 @@ void changePattern()
 void debugOutput()
 {
   Serial.println("-----");
-  if(VU)        { Serial.print("VU"); }
-  if(pulse)     { Serial.print("Pulse"); }
-  if(strobe)    { Serial.print("Strobe"); }
-  if(bloompulse){ Serial.print("Bloom Pulse"); }
+  if(VU)          { Serial.print("VU"); }
+  if(pulse)       { Serial.print("Pulse"); }
+  if(strobe)      { Serial.print("Strobe"); }
+  if(bloompulse)  { Serial.print("Bloom Pulse"); }
+  if(twinkle)     { Serial.print("Twinkle"); }
+  if(twinklePaint){ Serial.print("Twinkle Paint"); }
   if(waterfall) { Serial.print("Waterfall");  Serial.print(" DirectionUP:");  Serial.print(directionUp); }
   Serial.print(" | Freq:");  Serial.print(randomFreq);
   Serial.print(" Colour Wheel:");  Serial.print(colourWheel);
