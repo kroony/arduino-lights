@@ -222,13 +222,14 @@ void checkForPassive()
 void beatDetection()
 {
   bassPeak--;
-  byte currentBassAverage = pitch2; //bass beat detection off 160Hz range
+  byte currentBassAverage = (pitch1 + pitch2 + pitch3) / 3; //bass beat detection off 160Hz range
   if(bassPeak < currentBassAverage)
   {
     bassPeak = min(currentBassAverage + 10, 255);
     patternChangeCounter++; //count a beat
+    Serial.println(patternChangeCounter);
   }
-  if(patternChangeCounter > 15) {//try change the pattern every 16 beats
+  if(patternChangeCounter > 16) {//try change the pattern every 16 beats
     patternChangeCounter = 0;
     changePattern();
   }
