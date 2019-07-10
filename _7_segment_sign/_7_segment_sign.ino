@@ -9,8 +9,9 @@ byte currentPrice = 3;
 
 void displayDigit(byte price);
 
-byte delayMinutes = 1;
 byte digitColour = 0;
+
+byte lightOrder[56] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 48, 47, 46, 45, 44, 43, 42, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 48, 47, 46, 45, 44, 43, 42, 35, 36, 37, 38, 39, 40, 41};
 
 /*
  * 7 segment display values for 0 - 9
@@ -58,7 +59,7 @@ void loop()
   strip.show();
   
   //delay ms
-  delay(5000 * delayMinutes); //60000ms (1 minute)
+  delay(60 * random(10, 21)); //rnadom change between 10 and 20 minutes
 }
 
 void changePrice()
@@ -84,13 +85,14 @@ void changePrice()
       currentPrice--;
     }
   }
-  Serial.print(digitColour);
+  /*Serial.print(digitColour);
   Serial.print(" ");
-  Serial.println(currentPrice);
+  Serial.println(currentPrice);*/
 }
 
 void displayPrice()
 {
+  strip.clear();
   switch (currentPrice) {
     case 0:
       paintDigit(zero);
@@ -130,7 +132,31 @@ void displayPrice()
 
 void changeAnimation()
 {
-  rainbowDot();
+  byte randSwitch = random(0, 5);
+  switch(randSwitch) {
+    case 0:
+      segmentSpiral();
+      break;
+    case 1:
+      segmentSpiralBackwards();
+      break;
+    case 2:
+      rainbowDot();
+      break;
+    case 3:
+      rainbowDotBackwards();
+      break;
+    case 4:
+      sparkleDot();
+      break;
+    default:
+      segmentSpiral();
+      break;
+  }
+}
+
+void segmentSpiral()
+{
   paintSegment(Color(255,   0,   0), 0); strip.show(); delay(125); strip.clear(); //red
   paintSegment(Color(255, 127,   0), 1); strip.show(); delay(125); strip.clear(); //orange
   paintSegment(Color(255, 255,   0), 6); strip.show(); delay(125); strip.clear(); //yellow
@@ -138,7 +164,19 @@ void changeAnimation()
   paintSegment(Color(  0,   0, 255), 3); strip.show(); delay(125); strip.clear(); //blue
   paintSegment(Color( 75,   0, 130), 2); strip.show(); delay(125); strip.clear(); //indigo
   paintSegment(Color(148,   0, 211), 6); strip.show(); delay(125); strip.clear(); //Violet
-  paintSegment(Color(255, 255, 255), 5); strip.show(); delay(125); strip.clear(); //Violet
+  paintSegment(Color(255, 255, 255), 5); strip.show(); delay(125); strip.clear(); //White
+}
+
+void segmentSpiralBackwards()
+{
+  paintSegment(Color(255, 255, 255), 5); strip.show(); delay(125); strip.clear(); //White
+  paintSegment(Color(148,   0, 211), 6); strip.show(); delay(125); strip.clear(); //Violet
+  paintSegment(Color( 75,   0, 130), 2); strip.show(); delay(125); strip.clear(); //indigo
+  paintSegment(Color(  0,   0, 255), 3); strip.show(); delay(125); strip.clear(); //blue
+  paintSegment(Color(  0, 255,   0), 4); strip.show(); delay(125); strip.clear(); //green
+  paintSegment(Color(255, 255,   0), 6); strip.show(); delay(125); strip.clear(); //yellow
+  paintSegment(Color(255, 127,   0), 1); strip.show(); delay(125); strip.clear(); //orange
+  paintSegment(Color(255,   0,   0), 0); strip.show(); delay(125); strip.clear(); //red
 }
 
 void paintSegment(uint32_t colour, byte segmentNumber) //where segments are 0 - 7
@@ -153,12 +191,33 @@ void paintSegment(uint32_t colour, byte segmentNumber) //where segments are 0 - 
 
 void rainbowDot()
 {
-  for(byte i; i < strip.numPixels(); i++)//loop through lights in a segment and set their colour
+  for(byte i = 0; i < 56; i++)//loop through lights in a segment and set their colour
   {
     strip.clear();
-    strip.setPixelColor(i, Wheel(i * 4));
+    strip.setPixelColor(lightOrder[i], Wheel(i * 4));
     strip.show();
     delay(20);
   }
 }
 
+void rainbowDotBackwards()
+{
+  for(byte i = 55; i > 0; i--)//loop through lights in a segment and set their colour
+  {
+    strip.clear();
+    strip.setPixelColor(lightOrder[i], Wheel(i * 4));
+    strip.show();
+    delay(20);
+  }
+}
+
+void sparkleDot()
+{
+  for(byte i = 0; i < 255; i++)//loop through lights in a segment and set their colour
+  {
+    strip.clear();
+    strip.setPixelColor(random(0,50), Wheel(i));
+    strip.show();
+    delay(3);
+  }
+}
