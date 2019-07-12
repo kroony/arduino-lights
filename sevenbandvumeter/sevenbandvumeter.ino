@@ -1,11 +1,6 @@
 #include <AudioAnalyzer.h>
 #include <Adafruit_NeoPixel.h>
 
-//RF
-//#include <SPI.h>
-//#include <nRF24L01.h>
-//#include <RF24.h>
-
 //PIN Definition
 const byte LightDataPin = 6;
 const byte BrightnessPotPin = 2;
