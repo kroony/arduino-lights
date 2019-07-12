@@ -13,7 +13,7 @@ byte rightmaxresetlagcount = 0;
 int flashdifference = 40;
 
 //Set Strip Constants
-const int length = 200;
+const int length = 300;
 const byte half = length/2;
 
 //Library Setup
