@@ -1,3 +1,5 @@
+
+/*
 //Custom Characters for LCD
 //uint8_t bell[8]  = {0x4,0xe,0xe,0xe,0x1f,0x0,0x4};
 //uint8_t emptyHeart[8]  = {0x00,0x0A,0x15,0x11,0x0A,0x04,0x00,0x00};
@@ -121,7 +123,7 @@ void typeTextSeperate(char *redLine1, char *redLine2, char *blueLine1, char *blu
   redLCD.noBlink();
   blueLCD.noBlink();
 }
-*/
+
 void updateLCD(){
   //check if scores have changed
   if(scoreBlue != previousBlueScore || scoreRed != previousRedScore)
@@ -219,4 +221,4 @@ void printDotInfo(DotObject dot)
   }
 }
 
-
+*/

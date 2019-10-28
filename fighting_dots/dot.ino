@@ -10,6 +10,10 @@ void DotObject::activate(bool teamRed_, bool attack_)
 {
   active = true;
   attack = attack_;
+  if(!attack)
+  {
+    defenceActive = true;
+  }
   teamRed = teamRed_;
   megaDot = false;
   if(random(1,1000) < 5) {
@@ -21,7 +25,7 @@ void DotObject::activate(bool teamRed_, bool attack_)
     velocity *= -1;
   }
   location = teamRed ? 0 + scoreRed : strip.numPixels() - scoreBlue;//set the start location, offset by the scores
-  writeScores();
+  //writeScores();
 }
 
 static uint32_t DotObject::brightness(uint32_t colour, float bright)//return 32bit int colour at brightness 0 - 255
@@ -57,9 +61,10 @@ void DotObject::loop()
     float trailBright = 1 / (float)trailLength;
 
     uint32_t dotColor; //set the dot colour
-    if (!attack)      { dotColor = Color(  0, 255,   0); } //green for defence
-    else if (teamRed) { dotColor = Color(255,   0,   0); } //red for red attack
-    else              { dotColor = Color(  0,   0, 255); } //blue for blue attack
+    if (!attack && defenceActive)       { dotColor = Color(  0, 255,   0); } //green for active defence
+    else if(!attack && !defenceActive)  { dotColor = Color(255, 255,   0); } //yellow for inactive defence
+    else if (teamRed)                   { dotColor = Color(255,   0,   0); } //red for red attack
+    else                                { dotColor = Color(  0,   0, 255); } //blue for blue attack
 
     for (byte i = 0; i < trailLength; ++i) { //set the fading brightness trail of the dot
       uint32_t trailColor = brightness(dotColor, 1 - (trailBright * i));
@@ -77,14 +82,14 @@ void DotObject::loop()
         // increment score counter for red and deactivate dot
         active = false;
         scoreBlue--;
-        writeScores();
+        //writeScores();
       } else if (location < 0 + scoreRed && !teamRed) { //if a blue dot makes it to the red base
         // increment score counter for blue and deactivate dot
         active = false;
         scoreRed--;
-        writeScores();
+       // writeScores();
       }
-    } else { //bounce defence dot back at mid way point
+    } else if(!attack && defenceActive) { //bounce active defence dot back at mid way point
       if (location < strip.numPixels()/2+1 && !teamRed) { //if the blue defence dot location is over the half way from blue start
         velocity = fabs(velocity);
       } else if (location > strip.numPixels()/2-1 && teamRed) { //if the red defence dot location is over the half way from red start
@@ -92,11 +97,17 @@ void DotObject::loop()
       } else if (location > strip.numPixels()-1 && !teamRed) { //if blue defence moves off board on blue side
         // dead defense
         active = false;
-        writeScores();
+        //writeScores();
       } else if (location < 0 && teamRed) { //if red defence moves off board on red side
         // dead defense
         active = false;
-        writeScores();
+        //writeScores();
+      }
+    } else if(!defenceActive) { //deactivate inactive defence dots when they get to the centre line
+      if (location < strip.numPixels()/2+1 && !teamRed) { //if the blue defence dot location is over the half way from blue start
+        active = false;
+      } else if (location > strip.numPixels()/2-1 && teamRed) { //if the red defence dot location is over the half way from red start
+        active = false;
       }
     }
   }
@@ -120,7 +131,7 @@ void setFieldPixels()
 
   for(byte i = 0; i < scoreBlue; i++)
   {
-    strip.setPixelColor(strip.numPixels() - i + 1, DotObject::Color(0,0,255));
+    strip.setPixelColor(strip.numPixels() - i - 1, DotObject::Color(0,0,255));
   }
 }
 
@@ -174,19 +185,31 @@ void collisionDetection()
                 red.slowdown(); //slowdown red attack when it moves over a retreating blue defence dot
               }
             } else { //the are moving towards each other
-              if (blue.attack) { //red defended successfully, destroy blue attack dot, turn red defence around and into an attack dot
+              if (blue.attack && red.defenceActive) { //red defended successfully, destroy blue attack dot, deactivate the red defence dot and scale its speed based on how far out it defended
                 blue.active = false;
-                red.attack = true;
-                red.velocity *= -1;
-              } else { //blue defended successfully, destroy red attack dot, turn blue defence around and into an attack dot
+                red.defenceActive = false;
+                red.velocity = (map(red.location, 1, 175, 5, 31) / 10.0); //make the attack dot speed based on how far away from the base you defend (further the faster)
+                Serial.println(red.velocity);
+              } else if(red.attack && blue.defenceActive) { //blue defended successfully, destroy red attack dot, deactivate the blue defence dot and scale its speed based on how far out it defended
                 red.active = false;
-                blue.attack = true;
-                blue.velocity *= -1;
+                blue.defenceActive = false;
+                blue.velocity = (3.5 - (map(blue.location, 176, 350, 5, 31) / 10.0)) * -1; //make the attack dot speed based on how far away from the base you defend (further the faster)
+                Serial.println(red.velocity);
+              }
+              else if(blue.attack && !red.defenceActive)
+              {
+                blue.slowdown();
+                blue.slowdown();
+              }
+              else if(red.attack && !blue.defenceActive) 
+              {
+                red.slowdown();
+                red.slowdown();
               }
             }
           } else { //the dots are the same (attack + attack because defence cant interact past midpoint)
-            red.slowdown();
-            blue.slowdown();
+            //red.slowdown();
+            //blue.slowdown();
           }
         }
       }

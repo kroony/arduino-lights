@@ -59,7 +59,7 @@ void loop()
   strip.show();
   
   //delay ms
-  delay(60 * random(10, 21)); //rnadom change between 10 and 20 minutes
+  delay(60000 * random(10, 21)); //rnadom change between 10 and 20 minutes
 }
 
 void changePrice()

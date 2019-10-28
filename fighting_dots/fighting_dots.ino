@@ -74,6 +74,7 @@ class DotObject
     double velocity;
     bool teamRed;
     bool attack;
+    bool defenceActive;
     bool megaDot;
     
     static uint32_t Color(byte r, byte g, byte b);// return 32bit int colour from RGB 0 - 255
@@ -119,16 +120,21 @@ void setup()
   
   //Initialize Strips
   strip.begin();
+  strip.setBrightness(50); // Set BRIGHTNESS to about 1/5 (max = 255)
 
   //display the board markers
-  setFieldPixels();
+  //setFieldPixels();
     
-  strip.show();
+  //strip.show();
 
   // initialize the LCD
-  initaliseLCD();
+  //initaliseLCD();
 
   delay(1000);
+
+  colorWipe(strip.Color(255,   0,   0), 1); // Red
+  colorWipe(strip.Color(  0, 255,   0), 1); // Green
+  colorWipe(strip.Color(  0,   0, 255), 1); // Blue
 
   startNewGame();
 }
@@ -163,6 +169,14 @@ void loop()
   delay(15);
 }
 
+void colorWipe(uint32_t color, int wait) {
+  for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+    strip.setPixelColor(i, color);         //  Set pixel's color (in RAM)
+    strip.show();                          //  Update strip to match
+    delay(wait);                           //  Pause for a moment
+  }
+}
+
 void checkForWin()
 {
   if (scoreBlue == 0) { winner(true); }
@@ -172,7 +186,7 @@ void checkForWin()
 void winner(bool teamRed) //is the winner red?
 {
   gameActive = false;
-  writeWinner(teamRed);
+ // writeWinner(teamRed);
   
   uint32_t col = teamRed ? DotObject::Color(255,0,0) : DotObject::Color(0,0,255);
 
@@ -193,29 +207,8 @@ void startNewGame()
     dotsRed[i].active = false;
     dotsBlue[i].active = false;
   }
-  typeTextBoth(intro1, intro2);
-  delay(screenDelay);
-  
-  typeTextBoth(intro3, intro4);
-  delay(screenDelay);
-  
-  /*typeTextSeperate(intro5red, intro6red, intro5blue, intro6blue);
-  redLCD.print(space); delay(charDelay); redLCD.write(6); delay(charDelay);//crosshair
-  blueLCD.print(space); delay(charDelay); blueLCD.write(6); delay(charDelay);//crosshair
-  delay(screenDelay);
-  
-  typeTextBoth(intro7, intro8);
-  redLCD.print(space); delay(charDelay); redLCD.write(8); delay(charDelay);//sheild
-  blueLCD.print(space); delay(charDelay); blueLCD.write(8); delay(charDelay);//sheild
-  delay(screenDelay);*/
-  /*
-  typeTextSeperate(intro9red, intro10red, intro9blue, intro10blue);
-  delay(screenDelay);*/
- 
-  typeTextBoth(intro11, intro12);
-  
   
   gameActive = true;
-  writeScores();
+  //writeScores();
 }
 
