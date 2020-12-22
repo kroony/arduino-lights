@@ -3,9 +3,9 @@
 #define LED_PIN     6
 #define COLOR_ORDER GRB
 #define CHIPSET     WS2811
-#define NUM_LEDS    78
+#define NUM_LEDS    144
 
-#define BRIGHTNESS  250
+#define BRIGHTNESS  100
 #define FRAMES_PER_SECOND 60
 
 bool gReverseDirection = false;
@@ -165,4 +165,3 @@ void Fire2012WithPalette()
       leds[pixelnumber] = color;
     }
 }
-

@@ -11,7 +11,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(350, 6, NEO_RGB + NEO_KHZ800);
 const byte screenWidth = 16;
 // Set the LCD address to 0x3f for a 16 chars and 2 line display
 //make a screen for red and blue team
-LiquidCrystal_I2C redLCD(0x3F, screenWidth, 2);
+LiquidCrystal_I2C redLCD(0x26, screenWidth, 2);
 LiquidCrystal_I2C blueLCD(0x3E, screenWidth, 2);
 
 void displayDigit(int number);
@@ -128,7 +128,7 @@ void setup()
   //strip.show();
 
   // initialize the LCD
-  //initaliseLCD();
+  initaliseLCD();
 
   delay(1000);
 
@@ -211,4 +211,3 @@ void startNewGame()
   gameActive = true;
   //writeScores();
 }
-
