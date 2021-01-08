@@ -193,7 +193,7 @@ void WaterfallUp(int StartPos, int EndPos, byte Freq, byte ColourSelector)
   history[StartPos] = Freq; //Fill in the new value at the end of each array
 
   //Go through each Pixel on the strip and set its color
-  for (int i=0; i<stripLength; i++)
+  for (int i=0; i<totalLength; i++)
   {
     switch (ColourSelector) {
       case 0: strip.setPixelColor(StartPos+i, rWheel(history[StartPos+i])); break;
@@ -265,7 +265,7 @@ void TwinklePaint(int StartPos, int EndPos, byte Freq, byte ColourSelector)
 {
   int totalLength = EndPos - StartPos + 1;
   history[StartPos + random(0, totalLength)] = Freq; //Fill in the new value randomly into the history array
-  for (int i=0; i<stripLength; i++)
+  for (int i=0; i<totalLength; i++)
   {
     switch (ColourSelector) {
       case 0: strip.setPixelColor(StartPos+i, grFadeWheel(history[StartPos+i])); break;
@@ -279,5 +279,14 @@ void TwinklePaint(int StartPos, int EndPos, byte Freq, byte ColourSelector)
       case 8: strip.setPixelColor(StartPos+i, rcWheel(history[StartPos+i])); break;
       case 9: strip.setPixelColor(StartPos+i, Wheel(history[StartPos+i])); break;
     }
+  }
+}
+
+void BlockColour(int StartPos, int EndPos, uint32_t blockColor)
+{
+  int totalLength = EndPos - StartPos + 1;
+  for (int i=0; i<totalLength; i++)
+  {
+    strip.setPixelColor(StartPos+i, blockColor);
   }
 }
